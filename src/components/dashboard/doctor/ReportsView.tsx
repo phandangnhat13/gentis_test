@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,6 +12,25 @@ import {
   Calendar
 } from 'lucide-react';
 
+interface Biomarker {
+  value: number;
+  normal: string;
+  status: 'high' | 'low' | 'normal';
+}
+
+interface Report {
+  id: number;
+  patientCode: string;
+  patientName: string;
+  testCode: string;
+  date: string;
+  riskLevel: 'high' | 'medium' | 'low';
+  primaryDiagnosis: string;
+  riskScore: number;
+  recommendations: string[];
+  biomarkers: Record<string, Biomarker>;
+}
+
 interface ReportsViewProps {
   userRole: string;
 }
@@ -20,7 +38,7 @@ interface ReportsViewProps {
 export const ReportsView = ({ userRole }: ReportsViewProps) => {
   const isCollaborator = userRole === 'collaborator';
   
-  const [reports] = useState(isCollaborator ? [
+  const [reports] = useState<Report[]>(isCollaborator ? [
     {
       id: 3,
       patientCode: 'PT003',
