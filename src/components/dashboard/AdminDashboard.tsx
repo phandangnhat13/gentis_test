@@ -11,11 +11,13 @@ import {
   Settings,
   Database,
   Activity,
-  Bell
+  Bell,
+  UserCheck
 } from 'lucide-react';
 import { UserManagement } from './admin/UserManagement';
 import { DiseaseManagement } from './admin/DiseaseManagement';
 import { DataUpload } from './admin/DataUpload';
+import { PatientAssignment } from './admin/PatientAssignment';
 
 interface AdminDashboardProps {
   user: {
@@ -76,6 +78,13 @@ export const AdminDashboard = ({ user, onLogout }: AdminDashboardProps) => {
                 >
                   <Users className="h-4 w-4 mr-3" />
                   Quản lý người dùng
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="assignments" 
+                  className="w-full justify-start data-[state=active]:bg-red-50 data-[state=active]:text-red-700"
+                >
+                  <UserCheck className="h-4 w-4 mr-3" />
+                  Phân công bệnh nhân
                 </TabsTrigger>
                 <TabsTrigger 
                   value="diseases" 
@@ -146,6 +155,10 @@ export const AdminDashboard = ({ user, onLogout }: AdminDashboardProps) => {
 
             <TabsContent value="users" className="mt-0">
               <UserManagement />
+            </TabsContent>
+
+            <TabsContent value="assignments" className="mt-0">
+              <PatientAssignment />
             </TabsContent>
 
             <TabsContent value="diseases" className="mt-0">

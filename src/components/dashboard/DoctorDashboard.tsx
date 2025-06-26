@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,11 +12,13 @@ import {
   AlertTriangle,
   Clock,
   CheckCircle,
-  TrendingUp
+  TrendingUp,
+  Database
 } from 'lucide-react';
 import { PatientManagement } from './doctor/PatientManagement';
 import { TestManagement } from './doctor/TestManagement';
 import { ReportsView } from './doctor/ReportsView';
+import { DiseaseView } from './doctor/DiseaseView';
 
 interface DoctorDashboardProps {
   user: {
@@ -30,6 +31,7 @@ interface DoctorDashboardProps {
 
 export const DoctorDashboard = ({ user, onLogout }: DoctorDashboardProps) => {
   const [activeTab, setActiveTab] = useState('overview');
+  const isCollaborator = user.role === 'collaborator';
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -76,21 +78,30 @@ export const DoctorDashboard = ({ user, onLogout }: DoctorDashboardProps) => {
                   className="w-full justify-start data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
                 >
                   <Users className="h-4 w-4 mr-3" />
-                  Bệnh nhân
+                  Bệnh nhân {isCollaborator && '(Được phân công)'}
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="tests" 
-                  className="w-full justify-start data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
-                >
-                  <Search className="h-4 w-4 mr-3" />
-                  Xét nghiệm
-                </TabsTrigger>
+                {!isCollaborator && (
+                  <TabsTrigger 
+                    value="tests" 
+                    className="w-full justify-start data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
+                  >
+                    <Search className="h-4 w-4 mr-3" />
+                    Xét nghiệm
+                  </TabsTrigger>
+                )}
                 <TabsTrigger 
                   value="reports" 
                   className="w-full justify-start data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
                 >
                   <FileText className="h-4 w-4 mr-3" />
-                  Báo cáo
+                  Báo cáo chẩn đoán
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="diseases" 
+                  className="w-full justify-start data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
+                >
+                  <Database className="h-4 w-4 mr-3" />
+                  Danh sách bệnh
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -104,31 +115,37 @@ export const DoctorDashboard = ({ user, onLogout }: DoctorDashboardProps) => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Bệnh nhân hôm nay</CardTitle>
+                    <CardTitle className="text-sm font-medium">
+                      {isCollaborator ? 'BN được phân công' : 'Bệnh nhân hôm nay'}
+                    </CardTitle>
                     <Users className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">12</div>
-                    <p className="text-xs text-muted-foreground">+3 từ hôm qua</p>
+                    <div className="text-2xl font-bold">{isCollaborator ? '5' : '12'}</div>
+                    <p className="text-xs text-muted-foreground">
+                      {isCollaborator ? 'Đang theo dõi' : '+3 từ hôm qua'}
+                    </p>
                   </CardContent>
                 </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Xét nghiệm chờ xử lý</CardTitle>
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">8</div>
-                    <p className="text-xs text-muted-foreground">Cần phân tích</p>
-                  </CardContent>
-                </Card>
+                {!isCollaborator && (
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Xét nghiệm chờ xử lý</CardTitle>
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">8</div>
+                      <p className="text-xs text-muted-foreground">Cần phân tích</p>
+                    </CardContent>
+                  </Card>
+                )}
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Cảnh báo nguy cơ cao</CardTitle>
                     <AlertTriangle className="h-4 w-4 text-red-500" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-red-600">3</div>
+                    <div className="text-2xl font-bold text-red-600">{isCollaborator ? '1' : '3'}</div>
                     <p className="text-xs text-muted-foreground">Cần xem xét gấp</p>
                   </CardContent>
                 </Card>
@@ -138,7 +155,7 @@ export const DoctorDashboard = ({ user, onLogout }: DoctorDashboardProps) => {
                     <CheckCircle className="h-4 w-4 text-green-500" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-green-600">45</div>
+                    <div className="text-2xl font-bold text-green-600">{isCollaborator ? '15' : '45'}</div>
                     <p className="text-xs text-muted-foreground">Tuần này</p>
                   </CardContent>
                 </Card>
@@ -151,71 +168,91 @@ export const DoctorDashboard = ({ user, onLogout }: DoctorDashboardProps) => {
                     <CardTitle>Cảnh báo nguy cơ cao gần đây</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-slate-800">Nguyễn Văn A - #PT001</p>
-                        <p className="text-sm text-slate-600">Nguy cơ cao: Tiểu đường type 2</p>
+                    {isCollaborator ? (
+                      <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                        <div>
+                          <p className="font-medium text-slate-800">Lê Văn C - #PT003</p>
+                          <p className="text-sm text-slate-600">Nguy cơ cao: Gan nhiễm mỡ</p>
+                        </div>
+                        <Badge variant="destructive">Cao</Badge>
                       </div>
-                      <Badge variant="destructive">Cao</Badge>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-slate-800">Trần Thị B - #PT002</p>
-                        <p className="text-sm text-slate-600">Nguy cơ trung bình: Rối loạn lipid</p>
-                      </div>
-                      <Badge variant="secondary" className="bg-orange-100 text-orange-800">Trung bình</Badge>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-slate-800">Lê Văn C - #PT003</p>
-                        <p className="text-sm text-slate-600">Nguy cơ cao: Gan nhiễm mỡ</p>
-                      </div>
-                      <Badge variant="destructive">Cao</Badge>
-                    </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                          <div>
+                            <p className="font-medium text-slate-800">Nguyễn Văn A - #PT001</p>
+                            <p className="text-sm text-slate-600">Nguy cơ cao: Tiểu đường type 2</p>
+                          </div>
+                          <Badge variant="destructive">Cao</Badge>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                          <div>
+                            <p className="font-medium text-slate-800">Trần Thị B - #PT002</p>
+                            <p className="text-sm text-slate-600">Nguy cơ trung bình: Rối loạn lipid</p>
+                          </div>
+                          <Badge variant="secondary" className="bg-orange-100 text-orange-800">Trung bình</Badge>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                          <div>
+                            <p className="font-medium text-slate-800">Lê Văn C - #PT003</p>
+                            <p className="text-sm text-slate-600">Nguy cơ cao: Gan nhiễm mỡ</p>
+                          </div>
+                          <Badge variant="destructive">Cao</Badge>
+                        </div>
+                      </>
+                    )}
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Xét nghiệm mới nhất</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-slate-800">XN_240101_001</p>
-                        <p className="text-sm text-slate-600">Sinh hóa máu - 15 mẫu</p>
+                {!isCollaborator && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Xét nghiệm mới nhất</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                        <div>
+                          <p className="font-medium text-slate-800">XN_240101_001</p>
+                          <p className="text-sm text-slate-600">Sinh hóa máu - 15 mẫu</p>
+                        </div>
+                        <Badge>Đã xử lý</Badge>
                       </div>
-                      <Badge>Đã xử lý</Badge>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-slate-800">XN_240101_002</p>
-                        <p className="text-sm text-slate-600">Lipid profile - 8 mẫu</p>
+                      <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                        <div>
+                          <p className="font-medium text-slate-800">XN_240101_002</p>
+                          <p className="text-sm text-slate-600">Lipid profile - 8 mẫu</p>
+                        </div>
+                        <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Đang xử lý</Badge>
                       </div>
-                      <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Đang xử lý</Badge>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-slate-800">XN_240101_003</p>
-                        <p className="text-sm text-slate-600">HbA1c - 12 mẫu</p>
+                      <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                        <div>
+                          <p className="font-medium text-slate-800">XN_240101_003</p>
+                          <p className="text-sm text-slate-600">HbA1c - 12 mẫu</p>
+                        </div>
+                        <Badge>Đã xử lý</Badge>
                       </div>
-                      <Badge>Đã xử lý</Badge>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </TabsContent>
 
             <TabsContent value="patients" className="mt-0">
-              <PatientManagement />
+              <PatientManagement userRole={user.role} />
             </TabsContent>
 
-            <TabsContent value="tests" className="mt-0">
-              <TestManagement />
-            </TabsContent>
+            {!isCollaborator && (
+              <TabsContent value="tests" className="mt-0">
+                <TestManagement />
+              </TabsContent>
+            )}
 
             <TabsContent value="reports" className="mt-0">
-              <ReportsView />
+              <ReportsView userRole={user.role} />
+            </TabsContent>
+
+            <TabsContent value="diseases" className="mt-0">
+              <DiseaseView />
             </TabsContent>
           </Tabs>
         </main>

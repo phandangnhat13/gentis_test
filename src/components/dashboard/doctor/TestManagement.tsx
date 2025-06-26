@@ -9,6 +9,7 @@ import { Plus, Search, Upload, FileText, AlertTriangle } from 'lucide-react';
 
 export const TestManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [tests] = useState([
     {
       id: 1,
@@ -45,6 +46,83 @@ export const TestManagement = () => {
     }
   ]);
 
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setUploadedFile(file);
+      console.log('File đã chọn:', file.name, file.size, file.type);
+    }
+  };
+
+  const handleCreateTest = (formData: FormData) => {
+    const testName = formData.get('testName') as string;
+    const description = formData.get('description') as string;
+    
+    if (uploadedFile) {
+      console.log('Tạo xét nghiệm mới:', {
+        name: testName,
+        description: description,
+        file: uploadedFile.name,
+        fileSize: uploadedFile.size,
+        fileType: uploadedFile.type
+      });
+
+      // Giả lập xử lý file CSV/Excel
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target?.result as string;
+        console.log('Nội dung file:', content.substring(0, 200) + '...');
+        
+        // Giả lập phân tích dữ liệu
+        setTimeout(() => {
+          alert(`Xét nghiệm "${testName}" đã được tạo và đang xử lý dữ liệu từ file "${uploadedFile.name}"`);
+        }, 1000);
+      };
+      reader.readAsText(uploadedFile);
+      
+      setUploadedFile(null);
+    }
+  };
+
+  const handleExportReport = (testId: number) => {
+    const test = tests.find(t => t.id === testId);
+    if (test) {
+      const reportContent = `
+        BÁO CÁO XÉT NGHIỆM
+        ==================
+        
+        Mã xét nghiệm: ${test.code}
+        Tên xét nghiệm: ${test.name}
+        Ngày thực hiện: ${test.date}
+        Số mẫu: ${test.samples}
+        Thời gian xử lý: ${test.processingTime}
+        
+        KẾT QUẢ PHÂN TÍCH:
+        - Số mẫu nguy cơ cao: ${test.riskSamples}
+        - Tỷ lệ nguy cơ cao: ${((test.riskSamples / test.samples) * 100).toFixed(1)}%
+        
+        CÁC BỆNH ĐƯỢC GỢI Ý:
+        ${test.suggestedDiseases.map((disease, index) => `${index + 1}. ${disease}`).join('\n        ')}
+        
+        ==================
+        Báo cáo được tạo bởi SLSS Gentis
+        Ngày tạo: ${new Date().toLocaleDateString('vi-VN')}
+      `;
+
+      const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `BaoCao_${test.code}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      console.log('Xuất báo cáo cho xét nghiệm:', test.name);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
@@ -73,14 +151,18 @@ export const TestManagement = () => {
             <DialogHeader>
               <DialogTitle>Tạo xét nghiệm mới</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              handleCreateTest(new FormData(e.currentTarget));
+            }} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Tên xét nghiệm</label>
-                <Input placeholder="Nhập tên xét nghiệm" />
+                <Input name="testName" placeholder="Nhập tên xét nghiệm" required />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Mô tả</label>
                 <textarea 
+                  name="description"
                   className="w-full p-2 border border-slate-300 rounded-md h-20"
                   placeholder="Mô tả chi tiết về xét nghiệm"
                 />
@@ -90,12 +172,38 @@ export const TestManagement = () => {
                 <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center">
                   <Upload className="h-8 w-8 text-slate-400 mx-auto mb-2" />
                   <p className="text-sm text-slate-600 mb-2">Kéo thả file hoặc click để chọn</p>
-                  <p className="text-xs text-slate-500">Hỗ trợ: CSV, Excel (nhiều mẫu)</p>
-                  <Button className="mt-2" size="sm">Chọn file</Button>
+                  <p className="text-xs text-slate-500 mb-2">Hỗ trợ: CSV, Excel (nhiều mẫu)</p>
+                  <input
+                    type="file"
+                    accept=".csv,.xlsx,.xls"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    id="file-upload"
+                  />
+                  <Button 
+                    type="button" 
+                    size="sm" 
+                    onClick={() => document.getElementById('file-upload')?.click()}
+                  >
+                    Chọn file
+                  </Button>
+                  {uploadedFile && (
+                    <div className="mt-2 p-2 bg-green-50 rounded">
+                      <p className="text-sm text-green-800">
+                        ✓ Đã chọn: {uploadedFile.name} ({(uploadedFile.size / 1024).toFixed(1)} KB)
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
-              <Button className="w-full bg-blue-600 hover:bg-blue-700">Tạo và xử lý xét nghiệm</Button>
-            </div>
+              <Button 
+                type="submit" 
+                className="w-full bg-blue-600 hover:bg-blue-700"
+                disabled={!uploadedFile}
+              >
+                Tạo và xử lý xét nghiệm
+              </Button>
+            </form>
           </DialogContent>
         </Dialog>
       </div>
@@ -171,7 +279,11 @@ export const TestManagement = () => {
                       <FileText className="h-3 w-3 mr-1" />
                       Xem kết quả
                     </Button>
-                    <Button size="sm" variant="outline">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleExportReport(test.id)}
+                    >
                       Xuất báo cáo
                     </Button>
                     {test.riskSamples > 0 && (

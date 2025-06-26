@@ -13,8 +13,35 @@ import {
   Calendar
 } from 'lucide-react';
 
-export const ReportsView = () => {
-  const [reports] = useState([
+interface ReportsViewProps {
+  userRole: string;
+}
+
+export const ReportsView = ({ userRole }: ReportsViewProps) => {
+  const isCollaborator = userRole === 'collaborator';
+  
+  const [reports] = useState(isCollaborator ? [
+    {
+      id: 3,
+      patientCode: 'PT003',
+      patientName: 'Lê Văn C',
+      testCode: 'XN_240101_003',
+      date: '2024-01-13',
+      riskLevel: 'high',
+      primaryDiagnosis: 'Gan nhiễm mỡ',
+      riskScore: 78,
+      recommendations: [
+        'Giảm cân và tập thể dục đều đặn',
+        'Hạn chế rượu bia hoàn toàn',
+        'Theo dõi lại sau 3 tháng'
+      ],
+      biomarkers: {
+        alt: { value: 85, normal: '7-56', status: 'high' },
+        ast: { value: 72, normal: '10-40', status: 'high' },
+        ggt: { value: 95, normal: '9-48', status: 'high' }
+      }
+    }
+  ] : [
     {
       id: 1,
       patientCode: 'PT001',
@@ -57,6 +84,96 @@ export const ReportsView = () => {
     }
   ]);
 
+  const handleExportPDF = (reportId: number) => {
+    const report = reports.find(r => r.id === reportId);
+    if (report) {
+      // Tạo nội dung PDF
+      const pdfContent = `
+        BÁAO CÁO CHẨN ĐOÁN XÉT NGHIỆM
+        ================================
+        
+        Bệnh nhân: ${report.patientName} (${report.patientCode})
+        Ngày xét nghiệm: ${report.date}
+        Mã xét nghiệm: ${report.testCode}
+        
+        CHẨN ĐOÁN CHÍNH: ${report.primaryDiagnosis}
+        Điểm nguy cơ: ${report.riskScore}/100
+        
+        CÁC CHỈ SỐ SINH HỌC:
+        ${Object.entries(report.biomarkers).map(([key, marker]) => 
+          `- ${key.toUpperCase()}: ${marker.value} (Bình thường: ${marker.normal}) - ${marker.status === 'high' ? 'CAO' : marker.status === 'low' ? 'THẤP' : 'BÌNH THƯỜNG'}`
+        ).join('\n        ')}
+        
+        KHUYẾN NGHỊ:
+        ${report.recommendations.map((rec, index) => `${index + 1}. ${rec}`).join('\n        ')}
+        
+        ================================
+        Báo cáo được tạo bởi SLSS Gentis
+        Ngày tạo: ${new Date().toLocaleDateString('vi-VN')}
+      `;
+
+      // Tạo và tải xuống file
+      const blob = new Blob([pdfContent], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `BaoCao_${report.patientCode}_${report.date}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      console.log('Xuất báo cáo PDF cho:', report.patientName);
+    }
+  };
+
+  const handleExportAll = () => {
+    const allReportsContent = reports.map(report => `
+      BÁAO CÁO CHẨN ĐOÁN XÉT NGHIỆM
+      ================================
+      
+      Bệnh nhân: ${report.patientName} (${report.patientCode})
+      Ngày xét nghiệm: ${report.date}
+      Mã xét nghiệm: ${report.testCode}
+      
+      CHẨN ĐOÁN CHÍNH: ${report.primaryDiagnosis}
+      Điểm nguy cơ: ${report.riskScore}/100
+      
+      CÁC CHỈ SỐ SINH HỌC:
+      ${Object.entries(report.biomarkers).map(([key, marker]) => 
+        `- ${key.toUpperCase()}: ${marker.value} (Bình thường: ${marker.normal}) - ${marker.status === 'high' ? 'CAO' : marker.status === 'low' ? 'THẤP' : 'BÌNH THƯỜNG'}`
+      ).join('\n      ')}
+      
+      KHUYẾN NGHỊ:
+      ${report.recommendations.map((rec, index) => `${index + 1}. ${rec}`).join('\n      ')}
+      
+      ================================
+    `).join('\n\n');
+
+    const finalContent = allReportsContent + `
+      \n\nTÓM TẮT THỐNG KÊ:
+      - Tổng số báo cáo: ${reports.length}
+      - Nguy cơ cao: ${reports.filter(r => r.riskLevel === 'high').length}
+      - Nguy cơ trung bình: ${reports.filter(r => r.riskLevel === 'medium').length}
+      - Nguy cơ thấp: ${reports.filter(r => r.riskLevel === 'low').length}
+      
+      Báo cáo được tạo bởi SLSS Gentis
+      Ngày tạo: ${new Date().toLocaleDateString('vi-VN')}
+    `;
+
+    const blob = new Blob([finalContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `TongHopBaoCao_${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    console.log('Xuất tất cả báo cáo');
+  };
+
   const getRiskBadge = (level: string) => {
     switch (level) {
       case 'high':
@@ -86,8 +203,10 @@ export const ReportsView = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-slate-800">Báo cáo phân tích</h2>
-        <Button className="bg-blue-600 hover:bg-blue-700">
+        <h2 className="text-2xl font-bold text-slate-800">
+          {isCollaborator ? 'Báo cáo chẩn đoán - Bệnh nhân được phân công' : 'Báo cáo phân tích'}
+        </h2>
+        <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleExportAll}>
           <Download className="h-4 w-4 mr-2" />
           Xuất tất cả báo cáo
         </Button>
@@ -101,7 +220,9 @@ export const ReportsView = () => {
               <AlertTriangle className="h-8 w-8 text-red-500" />
               <div className="ml-3">
                 <p className="text-sm font-medium text-slate-600">Nguy cơ cao</p>
-                <p className="text-2xl font-bold text-red-600">3</p>
+                <p className="text-2xl font-bold text-red-600">
+                  {reports.filter(r => r.riskLevel === 'high').length}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -112,7 +233,9 @@ export const ReportsView = () => {
               <TrendingUp className="h-8 w-8 text-orange-500" />
               <div className="ml-3">
                 <p className="text-sm font-medium text-slate-600">Nguy cơ trung bình</p>
-                <p className="text-2xl font-bold text-orange-600">5</p>
+                <p className="text-2xl font-bold text-orange-600">
+                  {reports.filter(r => r.riskLevel === 'medium').length}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -122,8 +245,10 @@ export const ReportsView = () => {
             <div className="flex items-center">
               <Users className="h-8 w-8 text-blue-500" />
               <div className="ml-3">
-                <p className="text-sm font-medium text-slate-600">Tổng bệnh nhân</p>
-                <p className="text-2xl font-bold text-blue-600">12</p>
+                <p className="text-sm font-medium text-slate-600">
+                  {isCollaborator ? 'BN được phân công' : 'Tổng bệnh nhân'}
+                </p>
+                <p className="text-2xl font-bold text-blue-600">{reports.length}</p>
               </div>
             </div>
           </CardContent>
@@ -210,14 +335,21 @@ export const ReportsView = () => {
                   <FileText className="h-3 w-3 mr-1" />
                   Xem chi tiết
                 </Button>
-                <Button size="sm" variant="outline" className="flex-1">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => handleExportPDF(report.id)}
+                >
                   <Download className="h-3 w-3 mr-1" />
                   Xuất PDF
                 </Button>
-                <Button size="sm" className="flex-1 bg-blue-600 hover:bg-blue-700">
-                  <Calendar className="h-3 w-3 mr-1" />
-                  Lên lịch tái khám
-                </Button>
+                {!isCollaborator && (
+                  <Button size="sm" className="flex-1 bg-blue-600 hover:bg-blue-700">
+                    <Calendar className="h-3 w-3 mr-1" />
+                    Lên lịch tái khám
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
