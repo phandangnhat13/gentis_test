@@ -2,6 +2,10 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   FileText, 
   Download, 
@@ -9,8 +13,11 @@ import {
   TrendingUp, 
   Users,
   Activity,
-  Calendar
+  Calendar,
+  Eye,
+  X
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface Biomarker {
   value: number;
@@ -37,6 +44,9 @@ interface ReportsViewProps {
 
 export const ReportsView = ({ userRole }: ReportsViewProps) => {
   const isCollaborator = userRole === 'collaborator';
+  const [viewingReport, setViewingReport] = useState<Report | null>(null);
+  const [showScheduleDialog, setShowScheduleDialog] = useState<Report | null>(null);
+  const { toast } = useToast();
   
   const [reports] = useState<Report[]>(isCollaborator ? [
     {
@@ -105,7 +115,6 @@ export const ReportsView = ({ userRole }: ReportsViewProps) => {
   const handleExportPDF = (reportId: number) => {
     const report = reports.find(r => r.id === reportId);
     if (report) {
-      // Tạo nội dung PDF
       const pdfContent = `
         BÁAO CÁO CHẨN ĐOÁN XÉT NGHIỆM
         ================================
@@ -130,7 +139,6 @@ export const ReportsView = ({ userRole }: ReportsViewProps) => {
         Ngày tạo: ${new Date().toLocaleDateString('vi-VN')}
       `;
 
-      // Tạo và tải xuống file
       const blob = new Blob([pdfContent], { type: 'text/plain;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -140,6 +148,11 @@ export const ReportsView = ({ userRole }: ReportsViewProps) => {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Xuất báo cáo thành công",
+        description: `Báo cáo cho bệnh nhân ${report.patientName} đã được tải xuống`,
+      });
       
       console.log('Xuất báo cáo PDF cho:', report.patientName);
     }
@@ -189,7 +202,26 @@ export const ReportsView = ({ userRole }: ReportsViewProps) => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     
+    toast({
+      title: "Xuất tất cả báo cáo",
+      description: `Đã xuất ${reports.length} báo cáo thành công`,
+    });
+    
     console.log('Xuất tất cả báo cáo');
+  };
+
+  const handleScheduleAppointment = (report: Report, appointmentData: any) => {
+    toast({
+      title: "Lên lịch tái khám thành công",
+      description: `Đã lên lịch tái khám cho bệnh nhân ${report.patientName} vào ${appointmentData.date}`,
+    });
+    
+    console.log('Lên lịch tái khám:', {
+      patient: report.patientName,
+      ...appointmentData
+    });
+    
+    setShowScheduleDialog(null);
   };
 
   const getRiskBadge = (level: string) => {
@@ -349,8 +381,13 @@ export const ReportsView = ({ userRole }: ReportsViewProps) => {
 
               {/* Actions */}
               <div className="flex space-x-3 pt-4 border-t border-slate-200">
-                <Button size="sm" variant="outline" className="flex-1">
-                  <FileText className="h-3 w-3 mr-1" />
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => setViewingReport(report)}
+                >
+                  <Eye className="h-3 w-3 mr-1" />
                   Xem chi tiết
                 </Button>
                 <Button 
@@ -363,7 +400,11 @@ export const ReportsView = ({ userRole }: ReportsViewProps) => {
                   Xuất PDF
                 </Button>
                 {!isCollaborator && (
-                  <Button size="sm" className="flex-1 bg-blue-600 hover:bg-blue-700">
+                  <Button 
+                    size="sm" 
+                    className="flex-1 bg-blue-600 hover:bg-blue-700"
+                    onClick={() => setShowScheduleDialog(report)}
+                  >
                     <Calendar className="h-3 w-3 mr-1" />
                     Lên lịch tái khám
                   </Button>
@@ -372,6 +413,237 @@ export const ReportsView = ({ userRole }: ReportsViewProps) => {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      {/* View Report Detail Dialog */}
+      {viewingReport && (
+        <Dialog open={!!viewingReport} onOpenChange={() => setViewingReport(null)}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <div className="flex items-center justify-between">
+                <DialogTitle>Chi tiết báo cáo - {viewingReport.patientName}</DialogTitle>
+                <Button variant="outline" size="sm" onClick={() => setViewingReport(null)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </DialogHeader>
+            <ReportDetailView report={viewingReport} />
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Schedule Appointment Dialog */}
+      {showScheduleDialog && (
+        <Dialog open={!!showScheduleDialog} onOpenChange={() => setShowScheduleDialog(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Lên lịch tái khám - {showScheduleDialog.patientName}</DialogTitle>
+            </DialogHeader>
+            <ScheduleAppointmentForm 
+              report={showScheduleDialog}
+              onSchedule={handleScheduleAppointment}
+              onCancel={() => setShowScheduleDialog(null)}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+    </div>
+  );
+};
+
+// Report Detail View Component
+const ReportDetailView = ({ report }: { report: Report }) => {
+  return (
+    <div className="space-y-6">
+      {/* Patient Info */}
+      <div className="bg-slate-50 p-4 rounded-lg">
+        <h3 className="font-semibold text-slate-800 mb-3">Thông tin bệnh nhân</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm font-medium text-slate-600">Họ tên:</label>
+            <p className="font-medium">{report.patientName}</p>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-slate-600">Mã bệnh nhân:</label>
+            <p className="font-medium">{report.patientCode}</p>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-slate-600">Mã xét nghiệm:</label>
+            <p className="font-medium">{report.testCode}</p>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-slate-600">Ngày xét nghiệm:</label>
+            <p className="font-medium">{report.date}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Risk Assessment */}
+      <div className="bg-red-50 p-4 rounded-lg">
+        <h3 className="font-semibold text-red-800 mb-3">Đánh giá nguy cơ</h3>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-red-600">Mức độ nguy cơ</p>
+            <p className="text-2xl font-bold text-red-700">{report.riskScore}/100</p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm text-red-600">Phân loại</p>
+            <div className="mt-1">
+              {report.riskLevel === 'high' && <Badge variant="destructive">Nguy cơ cao</Badge>}
+              {report.riskLevel === 'medium' && <Badge className="bg-orange-100 text-orange-800">Trung bình</Badge>}
+              {report.riskLevel === 'low' && <Badge className="bg-green-100 text-green-800">Thấp</Badge>}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Detailed Biomarkers */}
+      <div>
+        <h3 className="font-semibold text-slate-800 mb-3">Chi tiết các chỉ số sinh học</h3>
+        <div className="space-y-3">
+          {Object.entries(report.biomarkers).map(([key, marker]) => (
+            <div key={key} className="border border-slate-200 rounded-lg p-4">
+              <div className="flex justify-between items-center mb-2">
+                <h4 className="font-medium capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</h4>
+                <Badge variant={marker.status === 'high' ? 'destructive' : marker.status === 'low' ? 'secondary' : 'default'}>
+                  {marker.status === 'high' ? 'Cao' : marker.status === 'low' ? 'Thấp' : 'Bình thường'}
+                </Badge>
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-slate-600">Giá trị đo được:</span>
+                  <p className="font-semibold text-lg">{marker.value}</p>
+                </div>
+                <div>
+                  <span className="text-slate-600">Khoảng bình thường:</span>
+                  <p className="font-medium">{marker.normal}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Diagnosis and Recommendations */}
+      <div className="bg-blue-50 p-4 rounded-lg">
+        <h3 className="font-semibold text-blue-800 mb-3">Chẩn đoán và khuyến nghị</h3>
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-medium text-blue-600">Chẩn đoán chính:</label>
+            <p className="font-semibold text-blue-800 text-lg">{report.primaryDiagnosis}</p>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-blue-600">Khuyến nghị xử lý:</label>
+            <ul className="mt-2 space-y-2">
+              {report.recommendations.map((rec, index) => (
+                <li key={index} className="flex items-start">
+                  <span className="bg-blue-600 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
+                    {index + 1}
+                  </span>
+                  <span className="text-blue-700">{rec}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Schedule Appointment Form Component
+const ScheduleAppointmentForm = ({ 
+  report, 
+  onSchedule, 
+  onCancel 
+}: { 
+  report: Report; 
+  onSchedule: (report: Report, data: any) => void; 
+  onCancel: () => void; 
+}) => {
+  const [appointmentData, setAppointmentData] = useState({
+    date: '',
+    time: '',
+    department: '',
+    doctor: '',
+    notes: ''
+  });
+
+  const handleSchedule = () => {
+    if (appointmentData.date && appointmentData.time && appointmentData.department) {
+      onSchedule(report, appointmentData);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="date">Ngày tái khám</Label>
+          <Input
+            id="date"
+            type="date"
+            value={appointmentData.date}
+            onChange={(e) => setAppointmentData({...appointmentData, date: e.target.value})}
+          />
+        </div>
+        <div>
+          <Label htmlFor="time">Giờ khám</Label>
+          <Input
+            id="time"
+            type="time"
+            value={appointmentData.time}
+            onChange={(e) => setAppointmentData({...appointmentData, time: e.target.value})}
+          />
+        </div>
+      </div>
+      
+      <div>
+        <Label htmlFor="department">Khoa khám</Label>
+        <Input
+          id="department"
+          placeholder="Ví dụ: Khoa Nội tiết"
+          value={appointmentData.department}
+          onChange={(e) => setAppointmentData({...appointmentData, department: e.target.value})}
+        />
+      </div>
+      
+      <div>
+        <Label htmlFor="doctor">Bác sĩ khám (tùy chọn)</Label>
+        <Input
+          id="doctor"
+          placeholder="Tên bác sĩ"
+          value={appointmentData.doctor}
+          onChange={(e) => setAppointmentData({...appointmentData, doctor: e.target.value})}
+        />
+      </div>
+      
+      <div>
+        <Label htmlFor="notes">Ghi chú</Label>
+        <Textarea
+          id="notes"
+          placeholder="Ghi chú thêm về lịch hẹn..."
+          value={appointmentData.notes}
+          onChange={(e) => setAppointmentData({...appointmentData, notes: e.target.value})}
+        />
+      </div>
+      
+      <div className="flex space-x-2 pt-4">
+        <Button 
+          className="flex-1 bg-blue-600 hover:bg-blue-700"
+          onClick={handleSchedule}
+          disabled={!appointmentData.date || !appointmentData.time || !appointmentData.department}
+        >
+          <Calendar className="h-4 w-4 mr-2" />
+          Lên lịch
+        </Button>
+        <Button 
+          variant="outline"
+          className="flex-1"
+          onClick={onCancel}
+        >
+          Hủy
+        </Button>
       </div>
     </div>
   );

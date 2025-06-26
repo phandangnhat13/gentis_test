@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,11 +6,14 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Search, UserPlus, X } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export const PatientAssignment = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDoctor, setSelectedDoctor] = useState('');
   const [selectedPatients, setSelectedPatients] = useState<number[]>([]);
+  const [selectedSingleDoctor, setSelectedSingleDoctor] = useState('');
+  const { toast } = useToast();
 
   const [doctors] = useState([
     { id: 1, name: 'BS. Nguyễn Văn A', role: 'doctor', phone: '0901234567' },
@@ -69,6 +71,7 @@ export const PatientAssignment = () => {
 
   const handleBulkAssignment = () => {
     if (selectedDoctor && selectedPatients.length > 0) {
+      const doctorName = doctors.find(d => d.id === parseInt(selectedDoctor))?.name;
       const newAssignments = selectedPatients.map(patientId => ({
         patientId,
         doctorId: parseInt(selectedDoctor),
@@ -79,12 +82,47 @@ export const PatientAssignment = () => {
       setSelectedPatients([]);
       setSelectedDoctor('');
       
+      toast({
+        title: "Phân công thành công",
+        description: `Đã phân công ${selectedPatients.length} bệnh nhân cho ${doctorName}`,
+      });
+      
       console.log('Phân công thành công:', newAssignments);
     }
   };
 
+  const handleSingleAssignment = (patientId: number) => {
+    if (selectedSingleDoctor) {
+      const doctorName = doctors.find(d => d.id === parseInt(selectedSingleDoctor))?.name;
+      const patientName = patients.find(p => p.id === patientId)?.name;
+      
+      const newAssignment = {
+        patientId,
+        doctorId: parseInt(selectedSingleDoctor),
+        date: new Date().toISOString().split('T')[0]
+      };
+      
+      setAssignments([...assignments, newAssignment]);
+      setSelectedSingleDoctor('');
+      
+      toast({
+        title: "Phân công thành công",
+        description: `Đã phân công bệnh nhân ${patientName} cho ${doctorName}`,
+      });
+      
+      console.log('Phân công bệnh nhân:', newAssignment);
+    }
+  };
+
   const handleRemoveAssignment = (patientId: number) => {
+    const patient = patients.find(p => p.id === patientId);
     setAssignments(assignments.filter(a => a.patientId !== patientId));
+    
+    toast({
+      title: "Hủy phân công",
+      description: `Đã hủy phân công bệnh nhân ${patient?.name}`,
+    });
+    
     console.log('Hủy phân công bệnh nhân:', patientId);
   };
 
@@ -109,6 +147,11 @@ export const PatientAssignment = () => {
     }
     return null;
   };
+
+  const filteredPatients = patients.filter(patient =>
+    patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    patient.code.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
@@ -249,7 +292,7 @@ export const PatientAssignment = () => {
                 </tr>
               </thead>
               <tbody>
-                {patients.map((patient) => {
+                {filteredPatients.map((patient) => {
                   const assignedDoctor = getPatientAssignedDoctor(patient.id);
                   return (
                     <tr key={patient.id} className="border-b border-slate-100 hover:bg-slate-50">
@@ -298,7 +341,7 @@ export const PatientAssignment = () => {
                                 <div className="space-y-4">
                                   <div>
                                     <label className="block text-sm font-medium mb-1">Chọn bác sĩ</label>
-                                    <Select>
+                                    <Select value={selectedSingleDoctor} onValueChange={setSelectedSingleDoctor}>
                                       <SelectTrigger>
                                         <SelectValue placeholder="Chọn bác sĩ" />
                                       </SelectTrigger>
@@ -311,7 +354,11 @@ export const PatientAssignment = () => {
                                       </SelectContent>
                                     </Select>
                                   </div>
-                                  <Button className="w-full bg-red-600 hover:bg-red-700">
+                                  <Button 
+                                    className="w-full bg-red-600 hover:bg-red-700"
+                                    onClick={() => handleSingleAssignment(patient.id)}
+                                    disabled={!selectedSingleDoctor}
+                                  >
                                     Phân công
                                   </Button>
                                 </div>
