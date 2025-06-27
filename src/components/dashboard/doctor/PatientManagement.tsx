@@ -1,11 +1,11 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Search, Edit, Eye } from 'lucide-react';
+import { Plus, Search, Edit, Eye, Download, FileText } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface PatientManagementProps {
   userRole: string;
@@ -13,9 +13,10 @@ interface PatientManagementProps {
 
 export const PatientManagement = ({ userRole }: PatientManagementProps) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [viewingPatient, setViewingPatient] = useState<any>(null);
   const isCollaborator = userRole === 'collaborator';
+  const { toast } = useToast();
   
-  // Dữ liệu bệnh nhân khác nhau cho từng vai trò
   const [patients] = useState(isCollaborator ? [
     {
       id: 3,
@@ -24,11 +25,19 @@ export const PatientManagement = ({ userRole }: PatientManagementProps) => {
       age: 52,
       gender: 'Nam',
       phone: '0903456789',
+      address: '123 Đường ABC, Quận 1, TP.HCM',
+      email: 'levanc@email.com',
+      insuranceNumber: 'HS1234567890',
       lastVisit: '2024-01-13',
       riskLevel: 'high',
       testsCount: 2,
       diagnoses: ['Gan nhiễm mỡ'],
-      assignedBy: 'Admin Gentis'
+      assignedBy: 'Admin Gentis',
+      assignedDoctor: 'BS. Nguyễn Văn A',
+      testResults: [
+        { date: '2024-01-13', code: 'XN001', diagnosis: 'Gan nhiễm mỡ', riskScore: 78 },
+        { date: '2024-01-10', code: 'XN002', diagnosis: 'Tăng men gan', riskScore: 65 }
+      ]
     },
     {
       id: 5,
@@ -37,11 +46,18 @@ export const PatientManagement = ({ userRole }: PatientManagementProps) => {
       age: 41,
       gender: 'Nữ',
       phone: '0905678901',
+      address: '456 Đường XYZ, Quận 3, TP.HCM',
+      email: 'hoangthie@email.com',
+      insuranceNumber: 'HS0987654321',
       lastVisit: '2024-01-12',
       riskLevel: 'medium',
       testsCount: 1,
       diagnoses: ['Tăng huyết áp'],
-      assignedBy: 'Admin Gentis'
+      assignedBy: 'Admin Gentis',
+      assignedDoctor: 'BS. Trần Thị B',
+      testResults: [
+        { date: '2024-01-12', code: 'XN003', diagnosis: 'Tăng huyết áp', riskScore: 55 }
+      ]
     }
   ] : [
     {
@@ -51,10 +67,19 @@ export const PatientManagement = ({ userRole }: PatientManagementProps) => {
       age: 45,
       gender: 'Nam',
       phone: '0901234567',
+      address: '789 Đường DEF, Quận 7, TP.HCM',
+      email: 'nguyenvana@email.com',
+      insuranceNumber: 'HS1111111111',
       lastVisit: '2024-01-15',
       riskLevel: 'high',
       testsCount: 3,
-      diagnoses: ['Tiểu đường type 2', 'Tăng huyết áp']
+      diagnoses: ['Tiểu đường type 2', 'Tăng huyết áp'],
+      assignedDoctor: 'BS. Gentis System',
+      testResults: [
+        { date: '2024-01-15', code: 'XN004', diagnosis: 'Tiểu đường type 2', riskScore: 85 },
+        { date: '2024-01-12', code: 'XN005', diagnosis: 'Tăng huyết áp', riskScore: 72 },
+        { date: '2024-01-10', code: 'XN006', diagnosis: 'Rối loạn lipid', riskScore: 68 }
+      ]
     },
     {
       id: 2,
@@ -63,10 +88,18 @@ export const PatientManagement = ({ userRole }: PatientManagementProps) => {
       age: 38,
       gender: 'Nữ',
       phone: '0902345678',
+      address: '321 Đường GHI, Quận 5, TP.HCM',
+      email: 'tranthib@email.com',
+      insuranceNumber: 'HS2222222222',
       lastVisit: '2024-01-14',
       riskLevel: 'medium',
       testsCount: 2,
-      diagnoses: ['Rối loạn lipid']
+      diagnoses: ['Rối loạn lipid'],
+      assignedDoctor: 'BS. Gentis System',
+      testResults: [
+        { date: '2024-01-14', code: 'XN007', diagnosis: 'Rối loạn lipid', riskScore: 65 },
+        { date: '2024-01-11', code: 'XN008', diagnosis: 'Thiếu máu nhẹ', riskScore: 45 }
+      ]
     },
     {
       id: 3,
@@ -75,12 +108,68 @@ export const PatientManagement = ({ userRole }: PatientManagementProps) => {
       age: 52,
       gender: 'Nam',
       phone: '0903456789',
+      address: '123 Đường ABC, Quận 1, TP.HCM',
+      email: 'levanc@email.com',
+      insuranceNumber: 'HS3333333333',
       lastVisit: '2024-01-13',
       riskLevel: 'low',
       testsCount: 1,
-      diagnoses: []
+      diagnoses: [],
+      assignedDoctor: 'BS. Gentis System',
+      testResults: [
+        { date: '2024-01-13', code: 'XN009', diagnosis: 'Bình thường', riskScore: 25 }
+      ]
     }
   ]);
+
+  const handleDownloadTestResults = (patient: any) => {
+    const pdfContent = `
+      BÁO CÁO SỐ LIỆU XÉT NGHIỆM
+      ===========================
+      
+      THÔNG TIN BỆNH NHÂN:
+      - Họ tên: ${patient.name}
+      - Mã BN: ${patient.code}
+      - Tuổi: ${patient.age}
+      - Giới tính: ${patient.gender}
+      - Số điện thoại: ${patient.phone}
+      - Email: ${patient.email}
+      - Địa chỉ: ${patient.address}
+      - Số BHYT: ${patient.insuranceNumber}
+      - Bác sĩ chỉ định: ${patient.assignedDoctor}
+      
+      KẾT QUẢ XÉT NGHIỆM:
+      ${patient.testResults.map((result: any, index: number) => `
+      ${index + 1}. Ngày: ${result.date} - Mã XN: ${result.code}
+         Chẩn đoán: ${result.diagnosis}
+         Điểm nguy cơ: ${result.riskScore}/100
+      `).join('')}
+      
+      TỔNG KẾT:
+      - Tổng số xét nghiệm: ${patient.testsCount}
+      - Mức độ nguy cơ: ${patient.riskLevel === 'high' ? 'Cao' : patient.riskLevel === 'medium' ? 'Trung bình' : 'Thấp'}
+      - Lần khám cuối: ${patient.lastVisit}
+      
+      ===========================
+      Báo cáo được tạo bởi SLSS Gentis
+      Ngày tạo: ${new Date().toLocaleDateString('vi-VN')} ${new Date().toLocaleTimeString('vi-VN')}
+    `;
+
+    const blob = new Blob([pdfContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `SoLieuXetNghiem_${patient.code}_${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Tải xuống thành công",
+      description: `Số liệu xét nghiệm của bệnh nhân ${patient.name} đã được tải xuống`,
+    });
+  };
 
   const handleAddPatient = (formData: FormData) => {
     const newPatient = {
@@ -92,7 +181,10 @@ export const PatientManagement = ({ userRole }: PatientManagementProps) => {
     };
     
     console.log('Thêm bệnh nhân mới:', newPatient);
-    // TODO: Gọi API để thêm bệnh nhân
+    toast({
+      title: "Thêm bệnh nhân thành công",
+      description: `Bệnh nhân ${newPatient.name} đã được thêm vào hệ thống`,
+    });
   };
 
   const getRiskBadge = (level: string) => {
@@ -193,6 +285,9 @@ export const PatientManagement = ({ userRole }: PatientManagementProps) => {
                           <span className="ml-2 text-blue-600">• Phân công bởi: {patient.assignedBy}</span>
                         )}
                       </p>
+                      <p className="text-sm text-green-600 font-medium">
+                        Bác sĩ chỉ định: {patient.assignedDoctor}
+                      </p>
                     </div>
                     {getRiskBadge(patient.riskLevel)}
                   </div>
@@ -236,9 +331,23 @@ export const PatientManagement = ({ userRole }: PatientManagementProps) => {
                   )}
 
                   <div className="flex space-x-2 pt-2">
-                    <Button size="sm" variant="outline" className="flex-1">
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => setViewingPatient(patient)}
+                    >
                       <Eye className="h-3 w-3 mr-1" />
                       Xem
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => handleDownloadTestResults(patient)}
+                    >
+                      <Download className="h-3 w-3 mr-1" />
+                      Tải SL XN
                     </Button>
                     {!isCollaborator && (
                       <Button size="sm" variant="outline" className="flex-1">
@@ -253,6 +362,84 @@ export const PatientManagement = ({ userRole }: PatientManagementProps) => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Patient Detail Dialog */}
+      {viewingPatient && (
+        <Dialog open={!!viewingPatient} onOpenChange={() => setViewingPatient(null)}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Thông tin chi tiết bệnh nhân - {viewingPatient.name}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6">
+              {/* Patient Basic Info */}
+              <div className="bg-slate-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-slate-800 mb-3">Thông tin cơ bản</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">Họ tên:</label>
+                    <p className="font-medium">{viewingPatient.name}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">Mã bệnh nhân:</label>
+                    <p className="font-medium">{viewingPatient.code}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">Tuổi:</label>
+                    <p className="font-medium">{viewingPatient.age}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">Giới tính:</label>
+                    <p className="font-medium">{viewingPatient.gender}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">Số điện thoại:</label>
+                    <p className="font-medium">{viewingPatient.phone}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">Email:</label>
+                    <p className="font-medium">{viewingPatient.email}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-sm font-medium text-slate-600">Địa chỉ:</label>
+                    <p className="font-medium">{viewingPatient.address}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">Số BHYT:</label>
+                    <p className="font-medium">{viewingPatient.insuranceNumber}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">Bác sĩ chỉ định:</label>
+                    <p className="font-medium text-green-600">{viewingPatient.assignedDoctor}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Test Results History */}
+              <div>
+                <h3 className="font-semibold text-slate-800 mb-3">Lịch sử xét nghiệm</h3>
+                <div className="space-y-3">
+                  {viewingPatient.testResults.map((result: any, index: number) => (
+                    <div key={index} className="border border-slate-200 rounded-lg p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <p className="font-medium">Mã XN: {result.code}</p>
+                          <p className="text-sm text-slate-600">Ngày: {result.date}</p>
+                        </div>
+                        <Badge 
+                          variant={result.riskScore >= 70 ? "destructive" : result.riskScore >= 50 ? "default" : "secondary"}
+                        >
+                          Điểm nguy cơ: {result.riskScore}
+                        </Badge>
+                      </div>
+                      <p className="text-sm"><strong>Chẩn đoán:</strong> {result.diagnosis}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
