@@ -1,11 +1,9 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   FileText, 
   Download, 
@@ -15,10 +13,17 @@ import {
   Activity,
   Calendar,
   Eye,
-  X,
   Clock
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 interface Biomarker {
   value: number;
@@ -32,8 +37,8 @@ interface Report {
   patientName: string;
   testCode: string;
   date: string;
-  testDateTime: string; // Precise date and time with seconds
-  diagnosisDateTime: string; // When diagnosis was made
+  testDateTime: string;
+  diagnosisDateTime: string;
   riskLevel: 'high' | 'medium' | 'low';
   primaryDiagnosis: string;
   riskScore: number;
@@ -48,7 +53,6 @@ interface ReportsViewProps {
 export const ReportsView = ({ userRole }: ReportsViewProps) => {
   const isCollaborator = userRole === 'collaborator';
   const [viewingReport, setViewingReport] = useState<Report | null>(null);
-  const [showScheduleDialog, setShowScheduleDialog] = useState<Report | null>(null);
   const { toast } = useToast();
   
   const [reports] = useState<Report[]>(isCollaborator ? [
@@ -125,114 +129,120 @@ export const ReportsView = ({ userRole }: ReportsViewProps) => {
     const report = reports.find(r => r.id === reportId);
     if (report) {
       const pdfContent = `
-        BÁAO CÁO CHẨN ĐOÁN XÉT NGHIỆM
-        ================================
+        BÁAO CÁO CHẨN ĐOÁN XÉT NGHIỆM CHI TIẾT
+        ======================================
         
-        Bệnh nhân: ${report.patientName} (${report.patientCode})
-        Ngày xét nghiệm: ${report.testDateTime}
-        Thời gian chẩn đoán: ${report.diagnosisDateTime}
-        Mã xét nghiệm: ${report.testCode}
+        THÔNG TIN BỆNH NHÂN:
+        - Họ tên: ${report.patientName}
+        - Mã bệnh nhân: ${report.patientCode}
+        - Mã xét nghiệm: ${report.testCode}
+        - Thời gian xét nghiệm: ${report.testDateTime}
+        - Thời gian chẩn đoán: ${report.diagnosisDateTime}
         
-        CHẨN ĐOÁN CHÍNH: ${report.primaryDiagnosis}
-        Điểm nguy cơ: ${report.riskScore}/100
+        KẾT QUẢ CHẨN ĐOÁN:
+        - Chẩn đoán chính: ${report.primaryDiagnosis}
+        - Điểm nguy cơ: ${report.riskScore}/100
+        - Mức độ nguy cơ: ${report.riskLevel === 'high' ? 'CAO' : report.riskLevel === 'medium' ? 'TRUNG BÌNH' : 'THẤP'}
         
-        CÁC CHỈ SỐ SINH HỌC:
+        CHI TIẾT CÁC CHỈ SỐ SINH HỌC:
         ${Object.entries(report.biomarkers).map(([key, marker]) => 
-          `- ${key.toUpperCase()}: ${marker.value} (Bình thường: ${marker.normal}) - ${marker.status === 'high' ? 'CAO' : marker.status === 'low' ? 'THẤP' : 'BÌNH THƯỜNG'}`
+          `- ${key.toUpperCase()}: ${marker.value} (Bình thường: ${marker.normal}) - Trạng thái: ${marker.status === 'high' ? 'CAO' : marker.status === 'low' ? 'THẤP' : 'BÌNH THƯỜNG'}`
         ).join('\n        ')}
         
-        KHUYẾN NGHỊ:
+        KHUYẾN NGHỊ XỬ LÝ CHI TIẾT:
         ${report.recommendations.map((rec, index) => `${index + 1}. ${rec}`).join('\n        ')}
         
-        ================================
+        PHÂN TÍCH NGUY CƠ:
+        - Số chỉ số bất thường: ${Object.values(report.biomarkers).filter(m => m.status !== 'normal').length}
+        - Các chỉ số vượt ngưỡng: ${Object.entries(report.biomarkers).filter(([_, m]) => m.status !== 'normal').map(([key, _]) => key.toUpperCase()).join(', ')}
+        
+        GHI CHÚ QUAN TRỌNG:
+        - Báo cáo này chỉ mang tính chất tham khảo
+        - Cần kết hợp với thăm khám lâm sàng để có chẩn đoán chính xác
+        - Liên hệ bác sĩ điều trị để được tư vấn cụ thể
+        
+        ======================================
         Báo cáo được tạo bởi SLSS Gentis
         Ngày tạo: ${new Date().toLocaleString('vi-VN')}
+        Người tạo: Bác sĩ ${userRole === 'collaborator' ? 'Cộng tác' : 'Chính'}
       `;
 
       const blob = new Blob([pdfContent], { type: 'text/plain;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `BaoCao_${report.patientCode}_${report.date}.txt`;
+      link.download = `BaoCaoChiTiet_${report.patientCode}_${report.date}.txt`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       
       toast({
-        title: "Xuất báo cáo thành công",
-        description: `Báo cáo cho bệnh nhân ${report.patientName} đã được tải xuống`,
+        title: "Xuất báo cáo chi tiết thành công",
+        description: `Báo cáo chi tiết cho bệnh nhân ${report.patientName} đã được tải xuống`,
       });
       
-      console.log('Xuất báo cáo PDF cho:', report.patientName);
+      console.log('Xuất báo cáo chi tiết cho:', report.patientName);
     }
   };
 
   const handleExportAll = () => {
     const allReportsContent = reports.map(report => `
-      BÁAO CÁO CHẨN ĐOÁN XÉT NGHIỆM
-      ================================
+      BÁAO CÁO CHẨN ĐOÁN XÉT NGHIỆM CHI TIẾT
+      ======================================
       
-      Bệnh nhân: ${report.patientName} (${report.patientCode})
-      Ngày xét nghiệm: ${report.testDateTime}
-      Thời gian chẩn đoán: ${report.diagnosisDateTime}
-      Mã xét nghiệm: ${report.testCode}
+      THÔNG TIN BỆNH NHÂN:
+      - Họ tên: ${report.patientName}
+      - Mã bệnh nhân: ${report.patientCode}
+      - Mã xét nghiệm: ${report.testCode}
+      - Thời gian xét nghiệm: ${report.testDateTime}
+      - Thời gian chẩn đoán: ${report.diagnosisDateTime}
       
-      CHẨN ĐOÁN CHÍNH: ${report.primaryDiagnosis}
-      Điểm nguy cơ: ${report.riskScore}/100
+      KẾT QUẢ CHẨN ĐOÁN:
+      - Chẩn đoán chính: ${report.primaryDiagnosis}
+      - Điểm nguy cơ: ${report.riskScore}/100
+      - Mức độ nguy cơ: ${report.riskLevel === 'high' ? 'CAO' : report.riskLevel === 'medium' ? 'TRUNG BÌNH' : 'THẤP'}
       
-      CÁC CHỈ SỐ SINH HỌC:
+      CHI TIẾT CÁC CHỈ SỐ SINH HỌC:
       ${Object.entries(report.biomarkers).map(([key, marker]) => 
-        `- ${key.toUpperCase()}: ${marker.value} (Bình thường: ${marker.normal}) - ${marker.status === 'high' ? 'CAO' : marker.status === 'low' ? 'THẤP' : 'BÌNH THƯỜNG'}`
+        `- ${key.toUpperCase()}: ${marker.value} (Bình thường: ${marker.normal}) - Trạng thái: ${marker.status === 'high' ? 'CAO' : marker.status === 'low' ? 'THẤP' : 'BÌNH THƯỜNG'}`
       ).join('\n      ')}
       
-      KHUYẾN NGHỊ:
+      KHUYẾN NGHỊ XỬ LÝ CHI TIẾT:
       ${report.recommendations.map((rec, index) => `${index + 1}. ${rec}`).join('\n      ')}
       
-      ================================
+      ======================================
     `).join('\n\n');
 
     const finalContent = allReportsContent + `
-      \n\nTÓM TẮT THỐNG KÊ:
+      \n\nTÓM TẮT THỐNG KÊ TỔNG QUAN:
       - Tổng số báo cáo: ${reports.length}
       - Nguy cơ cao: ${reports.filter(r => r.riskLevel === 'high').length}
       - Nguy cơ trung bình: ${reports.filter(r => r.riskLevel === 'medium').length}
       - Nguy cơ thấp: ${reports.filter(r => r.riskLevel === 'low').length}
+      - Tỷ lệ phát hiện bệnh: ${((reports.filter(r => r.riskLevel !== 'low').length / reports.length) * 100).toFixed(1)}%
       
       Báo cáo được tạo bởi SLSS Gentis
       Ngày tạo: ${new Date().toLocaleString('vi-VN')}
+      Người tạo: Bác sĩ ${userRole === 'collaborator' ? 'Cộng tác' : 'Chính'}
     `;
 
     const blob = new Blob([finalContent], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `TongHopBaoCao_${new Date().toISOString().split('T')[0]}.txt`;
+    link.download = `TongHopBaoCaoChiTiet_${new Date().toISOString().split('T')[0]}.txt`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     
     toast({
-      title: "Xuất tất cả báo cáo",
-      description: `Đã xuất ${reports.length} báo cáo thành công`,
+      title: "Xuất tất cả báo cáo chi tiết",
+      description: `Đã xuất ${reports.length} báo cáo chi tiết thành công`,
     });
     
-    console.log('Xuất tất cả báo cáo');
-  };
-
-  const handleScheduleAppointment = (report: Report, appointmentData: any) => {
-    toast({
-      title: "Lên lịch tái khám thành công",
-      description: `Đã lên lịch tái khám cho bệnh nhân ${report.patientName} vào ${appointmentData.date}`,
-    });
-    
-    console.log('Lên lịch tái khám:', {
-      patient: report.patientName,
-      ...appointmentData
-    });
-    
-    setShowScheduleDialog(null);
+    console.log('Xuất tất cả báo cáo chi tiết');
   };
 
   const getRiskBadge = (level: string) => {
@@ -248,19 +258,6 @@ export const ReportsView = ({ userRole }: ReportsViewProps) => {
     }
   };
 
-  const getBiomarkerStatus = (status: string) => {
-    switch (status) {
-      case 'high':
-        return 'text-red-600 bg-red-50';
-      case 'low':
-        return 'text-blue-600 bg-blue-50';
-      case 'normal':
-        return 'text-green-600 bg-green-50';
-      default:
-        return 'text-slate-600 bg-slate-50';
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -269,7 +266,7 @@ export const ReportsView = ({ userRole }: ReportsViewProps) => {
         </h2>
         <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleExportAll}>
           <Download className="h-4 w-4 mr-2" />
-          Xuất tất cả báo cáo
+          Xuất tất cả báo cáo chi tiết
         </Button>
       </div>
 
@@ -327,349 +324,152 @@ export const ReportsView = ({ userRole }: ReportsViewProps) => {
         </Card>
       </div>
 
-      {/* Individual Reports */}
-      <div className="space-y-4">
-        {reports.map((report) => (
-          <Card key={report.id} className="border border-slate-200">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg">{report.patientName}</CardTitle>
-                  <p className="text-sm text-slate-600">
-                    {report.patientCode} • {report.testCode}
-                  </p>
-                  <div className="flex items-center space-x-4 mt-2 text-sm text-slate-600">
-                    <div className="flex items-center">
-                      <Clock className="h-3 w-3 mr-1" />
-                      <span>XN: {report.testDateTime}</span>
+      {/* Reports Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Danh sách báo cáo</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Bệnh nhân</TableHead>
+                <TableHead>Mã XN</TableHead>
+                <TableHead>Thời gian XN</TableHead>
+                <TableHead>Thời gian CĐ</TableHead>
+                <TableHead>Chẩn đoán</TableHead>
+                <TableHead>Điểm nguy cơ</TableHead>
+                <TableHead>Mức độ</TableHead>
+                <TableHead>Thao tác</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {reports.map((report) => (
+                <TableRow key={report.id}>
+                  <TableCell>
+                    <div>
+                      <p className="font-medium">{report.patientName}</p>
+                      <p className="text-sm text-slate-600">{report.patientCode}</p>
                     </div>
-                    <div className="flex items-center">
-                      <FileText className="h-3 w-3 mr-1" />
-                      <span>CĐ: {report.diagnosisDateTime}</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm font-mono">{report.testCode}</span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center text-sm">
+                      <Clock className="h-3 w-3 mr-1 text-slate-500" />
+                      {report.testDateTime}
                     </div>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="text-right mr-3">
-                    <p className="text-sm text-slate-600">Điểm nguy cơ</p>
-                    <p className="text-xl font-bold text-red-600">{report.riskScore}/100</p>
-                  </div>
-                  {getRiskBadge(report.riskLevel)}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Primary Diagnosis */}
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h4 className="font-medium text-blue-800 mb-2">Chẩn đoán chính được gợi ý</h4>
-                <p className="text-blue-700 font-medium">{report.primaryDiagnosis}</p>
-              </div>
-
-              {/* Biomarkers */}
-              <div>
-                <h4 className="font-medium text-slate-800 mb-3">Chỉ số sinh học</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {Object.entries(report.biomarkers).map(([key, marker]) => (
-                    <div key={key} className={`p-3 rounded-lg ${getBiomarkerStatus(marker.status)}`}>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium capitalize">
-                          {key.replace(/([A-Z])/g, ' $1').trim()}
-                        </span>
-                        <span className="text-xs">{marker.normal}</span>
-                      </div>
-                      <p className="text-lg font-bold">{marker.value}</p>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center text-sm">
+                      <FileText className="h-3 w-3 mr-1 text-slate-500" />
+                      {report.diagnosisDateTime}
                     </div>
-                  ))}
-                </div>
-              </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm">{report.primaryDiagnosis}</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="font-bold text-red-600">{report.riskScore}/100</span>
+                  </TableCell>
+                  <TableCell>
+                    {getRiskBadge(report.riskLevel)}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => setViewingReport(report)}
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        Chi tiết
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleExportPDF(report.id)}
+                      >
+                        <Download className="h-3 w-3 mr-1" />
+                        Tải về
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
-              {/* Recommendations */}
-              <div>
-                <h4 className="font-medium text-slate-800 mb-3">Khuyến nghị xử lý</h4>
-                <div className="bg-slate-50 p-4 rounded-lg">
-                  <ul className="space-y-2">
-                    {report.recommendations.map((rec, index) => (
-                      <li key={index} className="flex items-start">
-                        <span className="bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
-                          {index + 1}
-                        </span>
-                        <span className="text-sm text-slate-700">{rec}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex space-x-3 pt-4 border-t border-slate-200">
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="flex-1"
-                  onClick={() => setViewingReport(report)}
-                >
-                  <Eye className="h-3 w-3 mr-1" />
-                  Xem chi tiết
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="flex-1"
-                  onClick={() => handleExportPDF(report.id)}
-                >
-                  <Download className="h-3 w-3 mr-1" />
-                  Xuất PDF
-                </Button>
-                {!isCollaborator && (
-                  <Button 
-                    size="sm" 
-                    className="flex-1 bg-blue-600 hover:bg-blue-700"
-                    onClick={() => setShowScheduleDialog(report)}
-                  >
-                    <Calendar className="h-3 w-3 mr-1" />
-                    Lên lịch tái khám
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* View Report Detail Dialog */}
+      {/* View Report Detail Dialog - Simplified */}
       {viewingReport && (
         <Dialog open={!!viewingReport} onOpenChange={() => setViewingReport(null)}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <div className="flex items-center justify-between">
-                <DialogTitle>Chi tiết báo cáo - {viewingReport.patientName}</DialogTitle>
-                <Button variant="outline" size="sm" onClick={() => setViewingReport(null)}>
-                  <X className="h-4 w-4" />
+              <DialogTitle>Thông tin cơ bản - {viewingReport.patientName}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="bg-slate-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-slate-800 mb-3">Thông tin tóm tắt</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <label className="text-slate-600">Họ tên:</label>
+                    <p className="font-medium">{viewingReport.patientName}</p>
+                  </div>
+                  <div>
+                    <label className="text-slate-600">Mã bệnh nhân:</label>
+                    <p className="font-medium">{viewingReport.patientCode}</p>
+                  </div>
+                  <div>
+                    <label className="text-slate-600">Mã xét nghiệm:</label>
+                    <p className="font-medium">{viewingReport.testCode}</p>
+                  </div>
+                  <div>
+                    <label className="text-slate-600">Điểm nguy cơ:</label>
+                    <p className="font-bold text-red-600">{viewingReport.riskScore}/100</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-blue-800 mb-2">Chẩn đoán chính</h3>
+                <p className="text-blue-700 font-medium">{viewingReport.primaryDiagnosis}</p>
+              </div>
+
+              <div className="bg-yellow-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-yellow-800 mb-2">Lưu ý quan trọng</h3>
+                <p className="text-yellow-700 text-sm">
+                  • Thông tin chi tiết về chỉ số sinh học, khuyến nghị xử lý được cung cấp trong file kết quả tải về.<br/>
+                  • Để xem đầy đủ thông tin phân tích, vui lòng tải file báo cáo chi tiết.<br/>
+                  • Kết quả chỉ mang tính chất tham khảo, cần kết hợp thăm khám lâm sàng.
+                </p>
+              </div>
+
+              <div className="flex space-x-2">
+                <Button 
+                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                  onClick={() => {
+                    handleExportPDF(viewingReport.id);
+                    setViewingReport(null);
+                  }}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Tải báo cáo chi tiết
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setViewingReport(null)}
+                >
+                  Đóng
                 </Button>
               </div>
-            </DialogHeader>
-            <ReportDetailView report={viewingReport} />
+            </div>
           </DialogContent>
         </Dialog>
       )}
-
-      {/* Schedule Appointment Dialog */}
-      {showScheduleDialog && (
-        <Dialog open={!!showScheduleDialog} onOpenChange={() => setShowScheduleDialog(null)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Lên lịch tái khám - {showScheduleDialog.patientName}</DialogTitle>
-            </DialogHeader>
-            <ScheduleAppointmentForm 
-              report={showScheduleDialog}
-              onSchedule={handleScheduleAppointment}
-              onCancel={() => setShowScheduleDialog(null)}
-            />
-          </DialogContent>
-        </Dialog>
-      )}
-    </div>
-  );
-};
-
-// Report Detail View Component
-const ReportDetailView = ({ report }: { report: Report }) => {
-  return (
-    <div className="space-y-6">
-      {/* Patient Info */}
-      <div className="bg-slate-50 p-4 rounded-lg">
-        <h3 className="font-semibold text-slate-800 mb-3">Thông tin bệnh nhân</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="text-sm font-medium text-slate-600">Họ tên:</label>
-            <p className="font-medium">{report.patientName}</p>
-          </div>
-          <div>
-            <label className="text-sm font-medium text-slate-600">Mã bệnh nhân:</label>
-            <p className="font-medium">{report.patientCode}</p>
-          </div>
-          <div>
-            <label className="text-sm font-medium text-slate-600">Mã xét nghiệm:</label>
-            <p className="font-medium">{report.testCode}</p>
-          </div>
-          <div>
-            <label className="text-sm font-medium text-slate-600">Thời gian xét nghiệm:</label>
-            <p className="font-medium">{report.testDateTime}</p>
-          </div>
-          <div>
-            <label className="text-sm font-medium text-slate-600">Thời gian chẩn đoán:</label>
-            <p className="font-medium">{report.diagnosisDateTime}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Risk Assessment */}
-      <div className="bg-red-50 p-4 rounded-lg">
-        <h3 className="font-semibold text-red-800 mb-3">Đánh giá nguy cơ</h3>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-red-600">Mức độ nguy cơ</p>
-            <p className="text-2xl font-bold text-red-700">{report.riskScore}/100</p>
-          </div>
-          <div className="text-right">
-            <p className="text-sm text-red-600">Phân loại</p>
-            <div className="mt-1">
-              {report.riskLevel === 'high' && <Badge variant="destructive">Nguy cơ cao</Badge>}
-              {report.riskLevel === 'medium' && <Badge className="bg-orange-100 text-orange-800">Trung bình</Badge>}
-              {report.riskLevel === 'low' && <Badge className="bg-green-100 text-green-800">Thấp</Badge>}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Detailed Biomarkers */}
-      <div>
-        <h3 className="font-semibold text-slate-800 mb-3">Chi tiết các chỉ số sinh học</h3>
-        <div className="space-y-3">
-          {Object.entries(report.biomarkers).map(([key, marker]) => (
-            <div key={key} className="border border-slate-200 rounded-lg p-4">
-              <div className="flex justify-between items-center mb-2">
-                <h4 className="font-medium capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</h4>
-                <Badge variant={marker.status === 'high' ? 'destructive' : marker.status === 'low' ? 'secondary' : 'default'}>
-                  {marker.status === 'high' ? 'Cao' : marker.status === 'low' ? 'Thấp' : 'Bình thường'}
-                </Badge>
-              </div>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-slate-600">Giá trị đo được:</span>
-                  <p className="font-semibold text-lg">{marker.value}</p>
-                </div>
-                <div>
-                  <span className="text-slate-600">Khoảng bình thường:</span>
-                  <p className="font-medium">{marker.normal}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Diagnosis and Recommendations */}
-      <div className="bg-blue-50 p-4 rounded-lg">
-        <h3 className="font-semibold text-blue-800 mb-3">Chẩn đoán và khuyến nghị</h3>
-        <div className="space-y-4">
-          <div>
-            <label className="text-sm font-medium text-blue-600">Chẩn đoán chính:</label>
-            <p className="font-semibold text-blue-800 text-lg">{report.primaryDiagnosis}</p>
-          </div>
-          <div>
-            <label className="text-sm font-medium text-blue-600">Khuyến nghị xử lý:</label>
-            <ul className="mt-2 space-y-2">
-              {report.recommendations.map((rec, index) => (
-                <li key={index} className="flex items-start">
-                  <span className="bg-blue-600 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
-                    {index + 1}
-                  </span>
-                  <span className="text-blue-700">{rec}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Schedule Appointment Form Component
-const ScheduleAppointmentForm = ({ 
-  report, 
-  onSchedule, 
-  onCancel 
-}: { 
-  report: Report; 
-  onSchedule: (report: Report, data: any) => void; 
-  onCancel: () => void; 
-}) => {
-  const [appointmentData, setAppointmentData] = useState({
-    date: '',
-    time: '',
-    department: '',
-    doctor: '',
-    notes: ''
-  });
-
-  const handleSchedule = () => {
-    if (appointmentData.date && appointmentData.time && appointmentData.department) {
-      onSchedule(report, appointmentData);
-    }
-  };
-
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="date">Ngày tái khám</Label>
-          <Input
-            id="date"
-            type="date"
-            value={appointmentData.date}
-            onChange={(e) => setAppointmentData({...appointmentData, date: e.target.value})}
-          />
-        </div>
-        <div>
-          <Label htmlFor="time">Giờ khám</Label>
-          <Input
-            id="time"
-            type="time"
-            value={appointmentData.time}
-            onChange={(e) => setAppointmentData({...appointmentData, time: e.target.value})}
-          />
-        </div>
-      </div>
-      
-      <div>
-        <Label htmlFor="department">Khoa khám</Label>
-        <Input
-          id="department"
-          placeholder="Ví dụ: Khoa Nội tiết"
-          value={appointmentData.department}
-          onChange={(e) => setAppointmentData({...appointmentData, department: e.target.value})}
-        />
-      </div>
-      
-      <div>
-        <Label htmlFor="doctor">Bác sĩ khám (tùy chọn)</Label>
-        <Input
-          id="doctor"
-          placeholder="Tên bác sĩ"
-          value={appointmentData.doctor}
-          onChange={(e) => setAppointmentData({...appointmentData, doctor: e.target.value})}
-        />
-      </div>
-      
-      <div>
-        <Label htmlFor="notes">Ghi chú</Label>
-        <Textarea
-          id="notes"
-          placeholder="Ghi chú thêm về lịch hẹn..."
-          value={appointmentData.notes}
-          onChange={(e) => setAppointmentData({...appointmentData, notes: e.target.value})}
-        />
-      </div>
-      
-      <div className="flex space-x-2 pt-4">
-        <Button 
-          className="flex-1 bg-blue-600 hover:bg-blue-700"
-          onClick={handleSchedule}
-          disabled={!appointmentData.date || !appointmentData.time || !appointmentData.department}
-        >
-          <Calendar className="h-4 w-4 mr-2" />
-          Lên lịch
-        </Button>
-        <Button 
-          variant="outline"
-          className="flex-1"
-          onClick={onCancel}
-        >
-          Hủy
-        </Button>
-      </div>
     </div>
   );
 };
