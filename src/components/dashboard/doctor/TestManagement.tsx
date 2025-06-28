@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Search, Upload, FileText, AlertTriangle } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Plus, Search, Upload, FileText, AlertTriangle, Download } from 'lucide-react';
 
 export const TestManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -20,7 +21,16 @@ export const TestManagement = () => {
       status: 'completed',
       riskSamples: 3,
       processingTime: '2h 15m',
-      suggestedDiseases: ['Tiểu đường type 2', 'Rối loạn lipid', 'Gan nhiễm mỡ']
+      suggestedDiseases: ['Tiểu đường type 2', 'Rối loạn lipid', 'Gan nhiễm mỡ'],
+      detailedResults: {
+        averageGlucose: 145,
+        averageCholesterol: 220,
+        abnormalSamples: [
+          { patientId: 'BN001', glucose: 180, cholesterol: 260, risk: 'high' },
+          { patientId: 'BN007', glucose: 165, cholesterol: 240, risk: 'medium' },
+          { patientId: 'BN012', glucose: 200, cholesterol: 280, risk: 'high' }
+        ]
+      }
     },
     {
       id: 2,
@@ -31,7 +41,16 @@ export const TestManagement = () => {
       status: 'processing',
       riskSamples: 2,
       processingTime: '1h 30m',
-      suggestedDiseases: ['Rối loạn lipid máu', 'Xơ vữa động mạch']
+      suggestedDiseases: ['Rối loạn lipid máu', 'Xơ vữa động mạch'],
+      detailedResults: {
+        averageTotalCholesterol: 235,
+        averageLDL: 145,
+        averageHDL: 42,
+        abnormalSamples: [
+          { patientId: 'BN003', totalChol: 280, ldl: 180, hdl: 35, risk: 'high' },
+          { patientId: 'BN009', totalChol: 250, ldl: 160, hdl: 38, risk: 'medium' }
+        ]
+      }
     },
     {
       id: 3,
@@ -42,7 +61,17 @@ export const TestManagement = () => {
       status: 'completed',
       riskSamples: 4,
       processingTime: '1h 45m',
-      suggestedDiseases: ['Tiểu đường type 2', 'Tiền tiểu đường']
+      suggestedDiseases: ['Tiểu đường type 2', 'Tiền tiểu đường'],
+      detailedResults: {
+        averageHbA1c: 7.2,
+        averageGlucose: 155,
+        abnormalSamples: [
+          { patientId: 'BN002', hba1c: 8.5, glucose: 190, risk: 'high' },
+          { patientId: 'BN005', hba1c: 7.8, glucose: 170, risk: 'high' },
+          { patientId: 'BN008', hba1c: 6.8, glucose: 145, risk: 'medium' },
+          { patientId: 'BN011', hba1c: 7.1, glucose: 160, risk: 'medium' }
+        ]
+      }
     }
   ]);
 
@@ -87,39 +116,85 @@ export const TestManagement = () => {
   const handleExportReport = (testId: number) => {
     const test = tests.find(t => t.id === testId);
     if (test) {
+      // Tạo báo cáo chi tiết với tất cả thông tin
       const reportContent = `
-        BÁO CÁO XÉT NGHIỆM
-        ==================
-        
-        Mã xét nghiệm: ${test.code}
-        Tên xét nghiệm: ${test.name}
-        Ngày thực hiện: ${test.date}
-        Số mẫu: ${test.samples}
-        Thời gian xử lý: ${test.processingTime}
-        
-        KẾT QUẢ PHÂN TÍCH:
-        - Số mẫu nguy cơ cao: ${test.riskSamples}
-        - Tỷ lệ nguy cơ cao: ${((test.riskSamples / test.samples) * 100).toFixed(1)}%
-        
-        CÁC BỆNH ĐƯỢC GỢI Ý:
-        ${test.suggestedDiseases.map((disease, index) => `${index + 1}. ${disease}`).join('\n        ')}
-        
-        ==================
-        Báo cáo được tạo bởi SLSS Gentis
-        Ngày tạo: ${new Date().toLocaleDateString('vi-VN')}
+BÁO CÁO XÉT NGHIỆM CHI TIẾT
+============================
+
+THÔNG TIN CHUNG:
+Mã xét nghiệm: ${test.code}
+Tên xét nghiệm: ${test.name}
+Ngày thực hiện: ${test.date}
+Số mẫu xét nghiệm: ${test.samples}
+Thời gian xử lý: ${test.processingTime}
+Trạng thái: ${test.status === 'completed' ? 'Hoàn thành' : 'Đang xử lý'}
+
+KẾT QUẢ TỔNG QUAN:
+- Số mẫu có nguy cơ cao: ${test.riskSamples}
+- Tỷ lệ nguy cơ cao: ${((test.riskSamples / test.samples) * 100).toFixed(1)}%
+- Số mẫu bình thường: ${test.samples - test.riskSamples}
+
+CÁC BỆNH ĐƯỢC GỢI Ý:
+${test.suggestedDiseases.map((disease, index) => `${index + 1}. ${disease}`).join('\n')}
+
+CHI TIẾT KẾT QUẢ XÉT NGHIỆM:
+${test.name === 'Sinh hóa máu tổng quát' ? `
+- Glucose trung bình: ${test.detailedResults.averageGlucose} mg/dL
+- Cholesterol trung bình: ${test.detailedResults.averageCholesterol} mg/dL
+
+DANH SÁCH MẪU BẤT THƯỜNG:
+${test.detailedResults.abnormalSamples.map((sample, index) => 
+  `${index + 1}. Mã BN: ${sample.patientId}
+     - Glucose: ${sample.glucose} mg/dL
+     - Cholesterol: ${sample.cholesterol} mg/dL
+     - Mức độ nguy cơ: ${sample.risk === 'high' ? 'Cao' : 'Trung bình'}`
+).join('\n')}` : 
+test.name === 'Lipid profile' ? `
+- Total Cholesterol trung bình: ${test.detailedResults.averageTotalCholesterol} mg/dL
+- LDL trung bình: ${test.detailedResults.averageLDL} mg/dL
+- HDL trung bình: ${test.detailedResults.averageHDL} mg/dL
+
+DANH SÁCH MẪU BẤT THƯỜNG:
+${test.detailedResults.abnormalSamples.map((sample, index) => 
+  `${index + 1}. Mã BN: ${sample.patientId}
+     - Total Cholesterol: ${sample.totalChol} mg/dL
+     - LDL: ${sample.ldl} mg/dL
+     - HDL: ${sample.hdl} mg/dL
+     - Mức độ nguy cơ: ${sample.risk === 'high' ? 'Cao' : 'Trung bình'}`
+).join('\n')}` : `
+- HbA1c trung bình: ${test.detailedResults.averageHbA1c}%
+- Glucose trung bình: ${test.detailedResults.averageGlucose} mg/dL
+
+DANH SÁCH MẪU BẤT THƯỜNG:
+${test.detailedResults.abnormalSamples.map((sample, index) => 
+  `${index + 1}. Mã BN: ${sample.patientId}
+     - HbA1c: ${sample.hba1c}%
+     - Glucose: ${sample.glucose} mg/dL
+     - Mức độ nguy cơ: ${sample.risk === 'high' ? 'Cao' : 'Trung bình'}`
+).join('\n')}`}
+
+KHUYẾN NGHỊ:
+- Theo dõi chặt chẽ các bệnh nhân có nguy cơ cao
+- Tư vấn thay đổi lối sống cho bệnh nhân
+- Xem xét các xét nghiệm bổ sung nếu cần thiết
+
+============================
+Báo cáo được tạo bởi SLSS Gentis
+Ngày tạo: ${new Date().toLocaleString('vi-VN')}
+Bác sĩ phụ trách: [Tên bác sĩ]
       `;
 
       const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `BaoCao_${test.code}.txt`;
+      link.download = `BaoCao_ChiTiet_${test.code}.txt`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       
-      console.log('Xuất báo cáo cho xét nghiệm:', test.name);
+      console.log('Xuất báo cáo chi tiết cho xét nghiệm:', test.name);
     }
   };
 
@@ -135,6 +210,11 @@ export const TestManagement = () => {
         return <Badge variant="secondary">Không xác định</Badge>;
     }
   };
+
+  const filteredTests = tests.filter(test =>
+    test.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    test.code.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
@@ -223,80 +303,60 @@ export const TestManagement = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {tests.map((test) => (
-              <Card key={test.id} className="border border-slate-200">
-                <CardHeader className="pb-3">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-lg">{test.name}</CardTitle>
-                      <p className="text-sm text-slate-600">Mã XN: {test.code}</p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      {test.riskSamples > 0 && (
-                        <Badge variant="destructive" className="flex items-center">
-                          <AlertTriangle className="h-3 w-3 mr-1" />
-                          {test.riskSamples} mẫu nguy cơ cao
-                        </Badge>
-                      )}
-                      {getStatusBadge(test.status)}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <span className="text-slate-600">Ngày tạo:</span>
-                      <div className="font-medium">{test.date}</div>
-                    </div>
-                    <div>
-                      <span className="text-slate-600">Số mẫu:</span>
-                      <div className="font-medium">{test.samples}</div>
-                    </div>
-                    <div>
-                      <span className="text-slate-600">Thời gian xử lý:</span>
-                      <div className="font-medium">{test.processingTime}</div>
-                    </div>
-                    <div>
-                      <span className="text-slate-600">Mẫu nguy cơ cao:</span>
-                      <div className="font-medium text-red-600">{test.riskSamples}</div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <span className="text-sm text-slate-600 block mb-2">Bệnh được gợi ý:</span>
-                    <div className="flex flex-wrap gap-1">
-                      {test.suggestedDiseases.map((disease, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
-                          {disease}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex space-x-2 pt-2">
-                    <Button size="sm" variant="outline" disabled={test.status === 'processing'}>
-                      <FileText className="h-3 w-3 mr-1" />
-                      Xem kết quả
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => handleExportReport(test.id)}
-                    >
-                      Xuất báo cáo
-                    </Button>
-                    {test.riskSamples > 0 && (
-                      <Button size="sm" className="bg-red-600 hover:bg-red-700">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Mã XN</TableHead>
+                <TableHead>Tên xét nghiệm</TableHead>
+                <TableHead>Ngày tạo</TableHead>
+                <TableHead>Số mẫu</TableHead>
+                <TableHead>Trạng thái</TableHead>
+                <TableHead>Mẫu nguy cơ cao</TableHead>
+                <TableHead>Thời gian xử lý</TableHead>
+                <TableHead className="text-right">Thao tác</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredTests.map((test) => (
+                <TableRow key={test.id}>
+                  <TableCell className="font-medium">{test.code}</TableCell>
+                  <TableCell>{test.name}</TableCell>
+                  <TableCell>{test.date}</TableCell>
+                  <TableCell>{test.samples}</TableCell>
+                  <TableCell>{getStatusBadge(test.status)}</TableCell>
+                  <TableCell>
+                    {test.riskSamples > 0 ? (
+                      <Badge variant="destructive" className="flex items-center w-fit">
                         <AlertTriangle className="h-3 w-3 mr-1" />
-                        Xem cảnh báo
-                      </Button>
+                        {test.riskSamples}
+                      </Badge>
+                    ) : (
+                      <span className="text-slate-500">0</span>
                     )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </TableCell>
+                  <TableCell>{test.processingTime}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex space-x-2 justify-end">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleExportReport(test.id)}
+                      >
+                        <Download className="h-3 w-3 mr-1" />
+                        Xuất báo cáo
+                      </Button>
+                      {test.riskSamples > 0 && (
+                        <Button size="sm" className="bg-red-600 hover:bg-red-700">
+                          <AlertTriangle className="h-3 w-3 mr-1" />
+                          Cảnh báo
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>

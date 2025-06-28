@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Search, FileText, Info } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Search, Info } from 'lucide-react';
 
 export const DiseaseView = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -96,38 +97,42 @@ export const DiseaseView = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {filteredDiseases.map((disease) => (
-              <Card key={disease.id} className="border border-slate-200">
-                <CardHeader className="pb-3">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-lg">{disease.name}</CardTitle>
-                      <p className="text-sm text-slate-600">Mã ICD: {disease.code} • Chuyên khoa: {disease.category}</p>
-                    </div>
-                    {getRiskBadge(disease.riskLevel)}
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div>
-                    <span className="text-sm text-slate-600 block mb-1">Các chỉ số sinh học liên quan:</span>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tên bệnh</TableHead>
+                <TableHead>Mã ICD</TableHead>
+                <TableHead>Chuyên khoa</TableHead>
+                <TableHead>Mức độ nguy cơ</TableHead>
+                <TableHead>Chỉ số liên quan</TableHead>
+                <TableHead className="text-right">Thao tác</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredDiseases.map((disease) => (
+                <TableRow key={disease.id}>
+                  <TableCell className="font-medium">{disease.name}</TableCell>
+                  <TableCell>{disease.code}</TableCell>
+                  <TableCell>{disease.category}</TableCell>
+                  <TableCell>{getRiskBadge(disease.riskLevel)}</TableCell>
+                  <TableCell>
                     <div className="flex flex-wrap gap-1">
-                      {disease.biomarkers.map((marker, index) => (
+                      {disease.biomarkers.slice(0, 2).map((marker, index) => (
                         <Badge key={index} variant="outline" className="text-xs">
                           {marker}
                         </Badge>
                       ))}
+                      {disease.biomarkers.length > 2 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{disease.biomarkers.length - 2}
+                        </Badge>
+                      )}
                     </div>
-                  </div>
-
-                  <div className="text-sm text-slate-700">
-                    <p className="line-clamp-2">{disease.description}</p>
-                  </div>
-
-                  <div className="flex space-x-2 pt-2">
+                  </TableCell>
+                  <TableCell className="text-right">
                     <Dialog>
                       <DialogTrigger asChild>
-                        <Button size="sm" variant="outline" className="flex-1">
+                        <Button size="sm" variant="outline">
                           <Info className="h-3 w-3 mr-1" />
                           Chi tiết
                         </Button>
@@ -181,11 +186,11 @@ export const DiseaseView = () => {
                         </div>
                       </DialogContent>
                     </Dialog>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>
