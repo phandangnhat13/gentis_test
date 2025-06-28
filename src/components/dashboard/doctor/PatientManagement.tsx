@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,14 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 interface PatientManagementProps {
   userRole: string;
@@ -50,6 +59,7 @@ export const PatientManagement = ({ userRole }: PatientManagementProps) => {
           id: 1,
           code: 'XN_240115_001',
           date: '2024-01-15',
+          testDateTime: '2024-01-15 09:30:45',
           diagnosisTime: '2024-01-15 14:35:27',
           diagnosis: 'Tiểu đường type 2',
           riskScore: 85,
@@ -79,6 +89,7 @@ export const PatientManagement = ({ userRole }: PatientManagementProps) => {
           id: 2,
           code: 'XN_240114_002',
           date: '2024-01-14',
+          testDateTime: '2024-01-14 14:20:18',
           diagnosisTime: '2024-01-14 10:22:15',
           diagnosis: 'Rối loạn lipid máu',
           riskScore: 65,
@@ -133,50 +144,54 @@ export const PatientManagement = ({ userRole }: PatientManagementProps) => {
   };
 
   const handleDownloadPDF = (patient: any) => {
-    toast({
-      title: "Tải xuống PDF",
-      description: `Đang tạo file PDF cho bệnh nhân ${patient.name}`,
-    });
-    
-    console.log('Download PDF for patient:', patient.code);
-  };
+    const pdfContent = `
+      THÔNG TIN CHI TIẾT BỆNH NHÂN
+      ============================
+      
+      THÔNG TIN CƠ BẢN:
+      - Mã bệnh nhân: ${patient.code}
+      - Họ tên: ${patient.name}
+      - Tuổi: ${patient.age}
+      - Giới tính: ${patient.gender}
+      - Số điện thoại: ${patient.phone}
+      - Địa chỉ: ${patient.address}
+      - Bác sĩ chỉ định: ${patient.assignedDoctor}
+      - Ngày phân công: ${patient.assignedDate}
+      - Lần khám gần nhất: ${patient.lastVisit}
+      - Trạng thái: ${patient.status === 'active' ? 'Đang điều trị' : 'Ngưng điều trị'}
+      
+      LỊCH SỬ XÉT NGHIỆM CHI TIẾT:
+      ${patient.tests.map((test: any) => `
+      - Mã xét nghiệm: ${test.code}
+      - Ngày xét nghiệm: ${test.date}
+      - Thời gian xét nghiệm chính xác: ${test.testDateTime}
+      - Thời gian chẩn đoán chính xác: ${test.diagnosisTime}
+      - Chẩn đoán: ${test.diagnosis}
+      - Điểm nguy cơ: ${test.riskScore}/100
+      - Chỉ số sinh học:
+        ${Object.entries(test.biomarkers).map(([key, value]) => `  + ${key.toUpperCase()}: ${value}`).join('\n        ')}
+      - Kết luận bác sĩ: ${test.doctorConclusion || 'Chưa có kết luận'}
+      `).join('\n      ')}
+      
+      ============================
+      Báo cáo được tạo bởi SLSS Gentis
+      Ngày tạo: ${new Date().toLocaleString('vi-VN')}
+      Người tạo: Bác sĩ ${userRole === 'collaborator' ? 'Cộng tác' : 'Chính'}
+    `;
 
-  const handleDownloadCSV = (patient: any) => {
-    const csvContent = `
-Thông tin bệnh nhân
-Mã bệnh nhân,${patient.code}
-Họ tên,${patient.name}
-Tuổi,${patient.age}
-Giới tính,${patient.gender}
-Số điện thoại,${patient.phone}
-Địa chỉ,${patient.address}
-Bác sĩ chỉ định,${patient.assignedDoctor}
-Ngày phân công,${patient.assignedDate}
-
-Kết quả xét nghiệm
-${patient.tests.map((test: any) => `
-Mã xét nghiệm,${test.code}
-Ngày xét nghiệm,${test.date}
-Thời gian chẩn đoán,${test.diagnosisTime}
-Chẩn đoán,${test.diagnosis}
-Điểm nguy cơ,${test.riskScore}
-Kết luận bác sĩ,"${test.doctorConclusion || 'Chưa có kết luận'}"
-`).join('\n')}
-    `.trim();
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+    const blob = new Blob([pdfContent], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `BenhNhan_${patient.code}.csv`;
+    link.download = `ThongTinBenhNhan_${patient.code}.txt`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     
     toast({
-      title: "Tải xuống CSV thành công",
-      description: `File CSV cho bệnh nhân ${patient.name} đã được tải xuống`,
+      title: "Tải xuống thành công",
+      description: `Thông tin chi tiết bệnh nhân ${patient.name} đã được tải xuống`,
     });
   };
 
@@ -206,224 +221,165 @@ Kết luận bác sĩ,"${test.doctorConclusion || 'Chưa có kết luận'}"
         </CardContent>
       </Card>
 
-      {/* Patient List */}
-      <div className="grid gap-4">
-        {filteredPatients.map((patient) => (
-          <Card key={patient.id} className="border border-slate-200">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg">{patient.name}</CardTitle>
-                  <p className="text-sm text-slate-600">Mã BN: {patient.code}</p>
-                </div>
-                <div className="flex space-x-2">
-                  <Badge variant={patient.status === 'active' ? "default" : "secondary"}>
-                    {patient.status === 'active' ? 'Đang điều trị' : 'Ngưng điều trị'}
-                  </Badge>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setSelectedPatient(patient)}
-                  >
-                    <Eye className="h-4 w-4 mr-1" />
-                    Xem chi tiết
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                <div className="flex items-center">
-                  <User className="h-4 w-4 mr-2 text-slate-500" />
-                  <span>{patient.age} tuổi, {patient.gender}</span>
-                </div>
-                <div className="flex items-center">
-                  <Phone className="h-4 w-4 mr-2 text-slate-500" />
-                  <span>{patient.phone}</span>
-                </div>
-                <div className="flex items-center">
-                  <MapPin className="h-4 w-4 mr-2 text-slate-500" />
-                  <span>{patient.address}</span>
-                </div>
-                <div className="flex items-center">
-                  <Calendar className="h-4 w-4 mr-2 text-slate-500" />
-                  <span>Khám gần nhất: {patient.lastVisit}</span>
-                </div>
-              </div>
-
-              <div className="bg-blue-50 p-3 rounded-lg">
-                <p className="text-sm font-medium text-blue-800 mb-1">Bác sĩ chỉ định:</p>
-                <p className="text-sm text-blue-700">{patient.assignedDoctor}</p>
-                <p className="text-xs text-blue-600">Ngày phân công: {patient.assignedDate}</p>
-              </div>
-
-              {/* Latest Test Results */}
-              {patient.tests.length > 0 && (
-                <div className="bg-slate-50 p-3 rounded-lg">
-                  <h4 className="font-medium text-slate-800 mb-2">Kết quả xét nghiệm gần nhất</h4>
-                  {patient.tests.map((test: any) => (
-                    <div key={test.id} className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <span className="font-medium">{test.code}</span>
-                          <span className="text-sm text-slate-600 ml-2">({test.date})</span>
-                        </div>
-                        <Badge variant="outline">
-                          Điểm nguy cơ: {test.riskScore}
-                        </Badge>
-                      </div>
-                      
-                      {test.diagnosisTime && (
-                        <div className="flex items-center text-xs text-green-600">
-                          <Clock className="h-3 w-3 mr-1" />
-                          <span>Thời gian chẩn đoán: {test.diagnosisTime}</span>
-                        </div>
-                      )}
-                      
-                      <p className="text-sm"><strong>Chẩn đoán:</strong> {test.diagnosis}</p>
-                      
-                      {test.doctorConclusion && (
-                        <div className="bg-green-50 p-2 rounded text-sm">
-                          <strong className="text-green-800">Kết luận bác sĩ:</strong>
-                          <p className="text-green-700">{test.doctorConclusion}</p>
-                        </div>
-                      )}
-                      
-                      {/* Action buttons for each test */}
-                      <div className="flex space-x-2 pt-2">
-                        {!isCollaborator && (
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => handleReAnalyze(patient, test)}
-                          >
-                            <RefreshCw className="h-3 w-3 mr-1" />
-                            Phân tích lại
-                          </Button>
-                        )}
-                        <Button 
-                          size="sm" 
-                          className="bg-blue-600 hover:bg-blue-700"
-                          onClick={() => {
-                            setSelectedPatient(patient);
-                            setConclusion(test.doctorConclusion || '');
-                            setShowConclusionDialog(true);
-                          }}
-                        >
-                          <FileText className="h-3 w-3 mr-1" />
-                          {test.doctorConclusion ? 'Sửa kết luận' : 'Nhập kết luận'}
-                        </Button>
-                      </div>
+      {/* Patient Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Danh sách bệnh nhân</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Bệnh nhân</TableHead>
+                <TableHead>Tuổi/Giới tính</TableHead>
+                <TableHead>Bác sĩ chỉ định</TableHead>
+                <TableHead>Lần khám gần nhất</TableHead>
+                <TableHead>Trạng thái</TableHead>
+                <TableHead>Thao tác</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredPatients.map((patient) => (
+                <TableRow key={patient.id}>
+                  <TableCell>
+                    <div>
+                      <p className="font-medium">{patient.name}</p>
+                      <p className="text-sm text-slate-600">{patient.code}</p>
                     </div>
-                  ))}
-                </div>
-              )}
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm">{patient.age} tuổi, {patient.gender}</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm">{patient.assignedDoctor}</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm">{patient.lastVisit}</span>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={patient.status === 'active' ? "default" : "secondary"}>
+                      {patient.status === 'active' ? 'Đang điều trị' : 'Ngưng điều trị'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => setSelectedPatient(patient)}
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        Chi tiết
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleDownloadPDF(patient)}
+                      >
+                        <Download className="h-3 w-3 mr-1" />
+                        Tải về
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
-              {/* Download Actions */}
-              <div className="flex space-x-2 pt-2 border-t border-slate-200">
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => handleDownloadPDF(patient)}
-                >
-                  <Download className="h-4 w-4 mr-1" />
-                  Tải PDF
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => handleDownloadCSV(patient)}
-                >
-                  <Download className="h-4 w-4 mr-1" />
-                  Tải CSV
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Patient Detail Dialog */}
+      {/* Patient Detail Dialog - Simplified */}
       {selectedPatient && (
         <Dialog open={!!selectedPatient} onOpenChange={() => setSelectedPatient(null)}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Chi tiết bệnh nhân - {selectedPatient.name}</DialogTitle>
+              <DialogTitle>Thông tin tóm tắt - {selectedPatient.name}</DialogTitle>
             </DialogHeader>
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h3 className="font-semibold mb-2">Thông tin cơ bản</h3>
-                  <div className="space-y-2 text-sm">
-                    <p><strong>Mã bệnh nhân:</strong> {selectedPatient.code}</p>
-                    <p><strong>Họ tên:</strong> {selectedPatient.name}</p>
-                    <p><strong>Tuổi:</strong> {selectedPatient.age}</p>
-                    <p><strong>Giới tính:</strong> {selectedPatient.gender}</p>
-                    <p><strong>Số điện thoại:</strong> {selectedPatient.phone}</p>
-                    <p><strong>Địa chỉ:</strong> {selectedPatient.address}</p>
+            <div className="space-y-4">
+              <div className="bg-slate-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-slate-800 mb-3">Thông tin cơ bản</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <label className="text-slate-600">Họ tên:</label>
+                    <p className="font-medium">{selectedPatient.name}</p>
                   </div>
-                </div>
-                <div>
-                  <h3 className="font-semibold mb-2">Thông tin điều trị</h3>
-                  <div className="space-y-2 text-sm">
-                    <p><strong>Bác sĩ chỉ định:</strong> {selectedPatient.assignedDoctor}</p>
-                    <p><strong>Ngày phân công:</strong> {selectedPatient.assignedDate}</p>
-                    <p><strong>Lần khám gần nhất:</strong> {selectedPatient.lastVisit}</p>
-                    <p><strong>Trạng thái:</strong> 
-                      <Badge className="ml-2">
-                        {selectedPatient.status === 'active' ? 'Đang điều trị' : 'Ngưng điều trị'}
-                      </Badge>
-                    </p>
+                  <div>
+                    <label className="text-slate-600">Mã bệnh nhân:</label>
+                    <p className="font-medium">{selectedPatient.code}</p>
+                  </div>
+                  <div>
+                    <label className="text-slate-600">Tuổi/Giới tính:</label>
+                    <p className="font-medium">{selectedPatient.age} tuổi, {selectedPatient.gender}</p>
+                  </div>
+                  <div>
+                    <label className="text-slate-600">Bác sĩ chỉ định:</label>
+                    <p className="font-medium">{selectedPatient.assignedDoctor}</p>
                   </div>
                 </div>
               </div>
 
-              <div>
-                <h3 className="font-semibold mb-4">Lịch sử xét nghiệm</h3>
-                <div className="space-y-4">
-                  {selectedPatient.tests.map((test: any) => (
-                    <Card key={test.id} className="p-4">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <h4 className="font-medium">{test.code}</h4>
-                          <p className="text-sm text-slate-600">Ngày: {test.date}</p>
-                          {test.diagnosisTime && (
-                            <p className="text-xs text-green-600 flex items-center mt-1">
-                              <Clock className="h-3 w-3 mr-1" />
-                              Chẩn đoán: {test.diagnosisTime}
-                            </p>
-                          )}
-                        </div>
-                        <Badge variant="outline">
-                          Điểm nguy cơ: {test.riskScore}
-                        </Badge>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <p className="text-sm"><strong>Chẩn đoán:</strong> {test.diagnosis}</p>
-                        
-                        <div>
-                          <p className="text-sm font-medium mb-1">Chỉ số sinh học:</p>
-                          <div className="grid grid-cols-3 gap-2 text-xs">
-                            {Object.entries(test.biomarkers).map(([key, value]) => (
-                              <div key={key} className="bg-slate-50 p-2 rounded">
-                                <div className="font-medium">{key.toUpperCase()}</div>
-                                <div className="text-blue-600">{value as string}</div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                        
-                        {test.doctorConclusion && (
-                          <div className="bg-green-50 p-3 rounded">
-                            <p className="text-sm font-medium text-green-800">Kết luận bác sĩ:</p>
-                            <p className="text-sm text-green-700">{test.doctorConclusion}</p>
-                          </div>
-                        )}
-                      </div>
-                    </Card>
-                  ))}
-                </div>
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-blue-800 mb-2">Xét nghiệm gần nhất</h3>
+                {selectedPatient.tests.length > 0 ? (
+                  <div className="text-sm text-blue-700">
+                    <p><strong>Mã XN:</strong> {selectedPatient.tests[0].code}</p>
+                    <p><strong>Chẩn đoán:</strong> {selectedPatient.tests[0].diagnosis}</p>
+                    <p><strong>Điểm nguy cơ:</strong> {selectedPatient.tests[0].riskScore}/100</p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-blue-700">Chưa có xét nghiệm</p>
+                )}
+              </div>
+
+              <div className="bg-yellow-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-yellow-800 mb-2">Lưu ý quan trọng</h3>
+                <p className="text-yellow-700 text-sm">
+                  • Thông tin chi tiết về bệnh nhân, lịch sử xét nghiệm được cung cấp trong file kết quả tải về.<br/>
+                  • Để xem đầy đủ thông tin, vui lòng tải file thông tin chi tiết.<br/>
+                  • Thông tin hiển thị ở đây chỉ mang tính chất tham khảo tổng quan.
+                </p>
+              </div>
+
+              <div className="flex space-x-2">
+                {selectedPatient.tests.length > 0 && (
+                  <>
+                    {!isCollaborator && (
+                      <Button 
+                        variant="outline"
+                        onClick={() => handleReAnalyze(selectedPatient, selectedPatient.tests[0])}
+                      >
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Phân tích lại
+                      </Button>
+                    )}
+                    <Button 
+                      variant="outline"
+                      onClick={() => {
+                        setConclusion(selectedPatient.tests[0].doctorConclusion || '');
+                        setShowConclusionDialog(true);
+                      }}
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      {selectedPatient.tests[0].doctorConclusion ? 'Sửa kết luận' : 'Nhập kết luận'}
+                    </Button>
+                  </>
+                )}
+                <Button 
+                  className="bg-blue-600 hover:bg-blue-700"
+                  onClick={() => {
+                    handleDownloadPDF(selectedPatient);
+                    setSelectedPatient(null);
+                  }}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Tải thông tin chi tiết
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => setSelectedPatient(null)}
+                >
+                  Đóng
+                </Button>
               </div>
             </div>
           </DialogContent>
