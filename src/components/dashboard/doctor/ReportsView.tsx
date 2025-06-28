@@ -15,7 +15,8 @@ import {
   Activity,
   Calendar,
   Eye,
-  X
+  X,
+  Clock
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -31,6 +32,8 @@ interface Report {
   patientName: string;
   testCode: string;
   date: string;
+  testDateTime: string; // Precise date and time with seconds
+  diagnosisDateTime: string; // When diagnosis was made
   riskLevel: 'high' | 'medium' | 'low';
   primaryDiagnosis: string;
   riskScore: number;
@@ -55,6 +58,8 @@ export const ReportsView = ({ userRole }: ReportsViewProps) => {
       patientName: 'Lê Văn C',
       testCode: 'XN_240101_003',
       date: '2024-01-13',
+      testDateTime: '2024-01-13 08:15:32',
+      diagnosisDateTime: '2024-01-13 14:22:15',
       riskLevel: 'high',
       primaryDiagnosis: 'Gan nhiễm mỡ',
       riskScore: 78,
@@ -76,6 +81,8 @@ export const ReportsView = ({ userRole }: ReportsViewProps) => {
       patientName: 'Nguyễn Văn A',
       testCode: 'XN_240101_001',
       date: '2024-01-15',
+      testDateTime: '2024-01-15 09:30:45',
+      diagnosisDateTime: '2024-01-15 16:45:22',
       riskLevel: 'high',
       primaryDiagnosis: 'Tiểu đường type 2',
       riskScore: 85,
@@ -96,6 +103,8 @@ export const ReportsView = ({ userRole }: ReportsViewProps) => {
       patientName: 'Trần Thị B',
       testCode: 'XN_240101_002',
       date: '2024-01-14',
+      testDateTime: '2024-01-14 14:20:18',
+      diagnosisDateTime: '2024-01-14 18:35:07',
       riskLevel: 'medium',
       primaryDiagnosis: 'Rối loạn lipid máu',
       riskScore: 65,
@@ -120,7 +129,8 @@ export const ReportsView = ({ userRole }: ReportsViewProps) => {
         ================================
         
         Bệnh nhân: ${report.patientName} (${report.patientCode})
-        Ngày xét nghiệm: ${report.date}
+        Ngày xét nghiệm: ${report.testDateTime}
+        Thời gian chẩn đoán: ${report.diagnosisDateTime}
         Mã xét nghiệm: ${report.testCode}
         
         CHẨN ĐOÁN CHÍNH: ${report.primaryDiagnosis}
@@ -136,7 +146,7 @@ export const ReportsView = ({ userRole }: ReportsViewProps) => {
         
         ================================
         Báo cáo được tạo bởi SLSS Gentis
-        Ngày tạo: ${new Date().toLocaleDateString('vi-VN')}
+        Ngày tạo: ${new Date().toLocaleString('vi-VN')}
       `;
 
       const blob = new Blob([pdfContent], { type: 'text/plain;charset=utf-8' });
@@ -164,7 +174,8 @@ export const ReportsView = ({ userRole }: ReportsViewProps) => {
       ================================
       
       Bệnh nhân: ${report.patientName} (${report.patientCode})
-      Ngày xét nghiệm: ${report.date}
+      Ngày xét nghiệm: ${report.testDateTime}
+      Thời gian chẩn đoán: ${report.diagnosisDateTime}
       Mã xét nghiệm: ${report.testCode}
       
       CHẨN ĐOÁN CHÍNH: ${report.primaryDiagnosis}
@@ -189,7 +200,7 @@ export const ReportsView = ({ userRole }: ReportsViewProps) => {
       - Nguy cơ thấp: ${reports.filter(r => r.riskLevel === 'low').length}
       
       Báo cáo được tạo bởi SLSS Gentis
-      Ngày tạo: ${new Date().toLocaleDateString('vi-VN')}
+      Ngày tạo: ${new Date().toLocaleString('vi-VN')}
     `;
 
     const blob = new Blob([finalContent], { type: 'text/plain;charset=utf-8' });
@@ -325,8 +336,18 @@ export const ReportsView = ({ userRole }: ReportsViewProps) => {
                 <div>
                   <CardTitle className="text-lg">{report.patientName}</CardTitle>
                   <p className="text-sm text-slate-600">
-                    {report.patientCode} • {report.testCode} • {report.date}
+                    {report.patientCode} • {report.testCode}
                   </p>
+                  <div className="flex items-center space-x-4 mt-2 text-sm text-slate-600">
+                    <div className="flex items-center">
+                      <Clock className="h-3 w-3 mr-1" />
+                      <span>XN: {report.testDateTime}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <FileText className="h-3 w-3 mr-1" />
+                      <span>CĐ: {report.diagnosisDateTime}</span>
+                    </div>
+                  </div>
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="text-right mr-3">
@@ -472,8 +493,12 @@ const ReportDetailView = ({ report }: { report: Report }) => {
             <p className="font-medium">{report.testCode}</p>
           </div>
           <div>
-            <label className="text-sm font-medium text-slate-600">Ngày xét nghiệm:</label>
-            <p className="font-medium">{report.date}</p>
+            <label className="text-sm font-medium text-slate-600">Thời gian xét nghiệm:</label>
+            <p className="font-medium">{report.testDateTime}</p>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-slate-600">Thời gian chẩn đoán:</label>
+            <p className="font-medium">{report.diagnosisDateTime}</p>
           </div>
         </div>
       </div>
