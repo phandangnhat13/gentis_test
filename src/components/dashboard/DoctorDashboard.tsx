@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,8 +11,30 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { MoreVertical, User } from 'lucide-react';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+  useSidebar,
+} from "@/components/ui/sidebar"
+import { 
+  User, 
+  FileText, 
+  Users, 
+  TestTube, 
+  BarChart3, 
+  Database, 
+  BookOpen,
+  Activity
+} from 'lucide-react';
 import { ReportsView } from './doctor/ReportsView';
 import { PatientManagement } from './doctor/PatientManagement';
 import { TestManagement } from './doctor/TestManagement';
@@ -28,96 +51,134 @@ interface DoctorDashboardProps {
   onLogout: () => void;
 }
 
+const menuItems = [
+  { id: 'reports', label: 'Báo cáo chẩn đoán', icon: FileText },
+  { id: 'patients', label: 'Quản lý bệnh nhân', icon: Users },
+  { id: 'tests', label: 'Quản lý xét nghiệm', icon: TestTube },
+  { id: 'analysis', label: 'Phân tích số liệu', icon: BarChart3 },
+  { id: 'batch', label: 'Phân tích hàng loạt', icon: Database },
+  { id: 'diseases', label: 'Danh mục bệnh', icon: BookOpen },
+];
+
+const DoctorSidebar = ({ activeTab, setActiveTab, userRole }: { 
+  activeTab: string; 
+  setActiveTab: (tab: string) => void;
+  userRole: string;
+}) => {
+  return (
+    <Sidebar className="w-64">
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-lg font-semibold mb-4">
+            <Activity className="h-5 w-5 mr-2" />
+            SLSS Gentis
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {menuItems.map((item) => (
+                <SidebarMenuItem key={item.id}>
+                  <SidebarMenuButton
+                    isActive={activeTab === item.id}
+                    onClick={() => setActiveTab(item.id)}
+                    className="w-full justify-start"
+                    disabled={
+                      (item.id === 'tests' || item.id === 'batch') && userRole === 'collaborator'
+                    }
+                  >
+                    <item.icon className="h-4 w-4 mr-3" />
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+    </Sidebar>
+  );
+};
+
 export const DoctorDashboard = ({ user, onLogout }: DoctorDashboardProps) => {
   const [activeTab, setActiveTab] = useState('reports');
 
-  const stats = {
-    patients: 120,
-    tests: 350,
-    highRisk: 45,
-    mediumRisk: 60,
-    lowRisk: 15
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'reports':
+        return <ReportsView userRole={user.role} />;
+      case 'patients':
+        return <PatientManagement userRole={user.role} />;
+      case 'tests':
+        return user.role !== 'collaborator' ? (
+          <TestManagement />
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-slate-600">Bác sĩ cộng tác không có quyền truy cập chức năng này</p>
+          </div>
+        );
+      case 'analysis':
+        return <TestAnalysis userRole={user.role} />;
+      case 'batch':
+        return user.role !== 'collaborator' ? (
+          <DataAnalysis />
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-slate-600">Bác sĩ cộng tác không có quyền truy cập chức năng này</p>
+          </div>
+        );
+      case 'diseases':
+        return <DiseaseView />;
+      default:
+        return <ReportsView userRole={user.role} />;
+    }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-200 py-4">
-        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-slate-800">
-            Chào mừng, {user.name} ({user.role})
-          </h1>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open user menu</span>
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="https://github.com/shadcn.png" alt={user.name} />
-                  <AvatarFallback><User className="h-4 w-4"/></AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Tài khoản</DropdownMenuLabel>
-              <DropdownMenuItem>
-                Hồ sơ
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={onLogout}>
-                Đăng xuất
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="reports">Báo cáo chẩn đoán</TabsTrigger>
-            <TabsTrigger value="patients">Quản lý bệnh nhân</TabsTrigger>
-            <TabsTrigger value="tests">Quản lý xét nghiệm</TabsTrigger>
-            <TabsTrigger value="analysis">Phân tích số liệu</TabsTrigger>
-            <TabsTrigger value="batch">Phân tích hàng loạt</TabsTrigger>
-            <TabsTrigger value="diseases">Danh mục bệnh</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="reports">
-            <ReportsView userRole={user.role} />
-          </TabsContent>
-
-          <TabsContent value="patients">
-            <PatientManagement userRole={user.role} />
-          </TabsContent>
-
-          <TabsContent value="tests">
-            {user.role !== 'collaborator' ? (
-              <TestManagement />
-            ) : (
-              <div className="text-center py-12">
-                <p className="text-slate-600">Bác sĩ cộng tác không có quyền truy cập chức năng này</p>
+    <SidebarProvider>
+      <div className="min-h-screen bg-slate-50 flex w-full">
+        <DoctorSidebar 
+          activeTab={activeTab} 
+          setActiveTab={setActiveTab}
+          userRole={user.role}
+        />
+        
+        <SidebarInset className="flex-1">
+          <header className="bg-white border-b border-slate-200 py-4 px-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <SidebarTrigger className="mr-4" />
+                <h1 className="text-2xl font-bold text-slate-800">
+                  Chào mừng, {user.name} ({user.role})
+                </h1>
               </div>
-            )}
-          </TabsContent>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-8 w-8 p-0">
+                    <span className="sr-only">Open user menu</span>
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src="https://github.com/shadcn.png" alt={user.name} />
+                      <AvatarFallback><User className="h-4 w-4"/></AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Tài khoản</DropdownMenuLabel>
+                  <DropdownMenuItem>
+                    Hồ sơ
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={onLogout}>
+                    Đăng xuất
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </header>
 
-          <TabsContent value="analysis">
-            <TestAnalysis userRole={user.role} />
-          </TabsContent>
-
-          <TabsContent value="batch">
-            {user.role !== 'collaborator' ? (
-              <DataAnalysis />
-            ) : (
-              <div className="text-center py-12">
-                <p className="text-slate-600">Bác sĩ cộng tác không có quyền truy cập chức năng này</p>
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="diseases">
-            <DiseaseView />
-          </TabsContent>
-        </Tabs>
+          <main className="p-6">
+            {renderContent()}
+          </main>
+        </SidebarInset>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };

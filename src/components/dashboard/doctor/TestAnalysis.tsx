@@ -125,7 +125,14 @@ export const TestAnalysis = ({ userRole }: TestAnalysisProps) => {
 
   const handleReAnalyze = (test: any) => {
     const newRiskScore = calculateRiskScore(test.biomarkers);
-    const diagnosisTime = new Date().toLocaleString('vi-VN');
+    const diagnosisTime = new Date().toLocaleString('vi-VN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
     
     toast({
       title: "Phân tích lại hoàn tất",
@@ -358,7 +365,13 @@ ${test.doctorConclusion || 'Chưa có kết luận'}
                   {test.diagnosisTime && (
                     <p className="text-xs text-green-600 flex items-center mt-1">
                       <Clock className="h-3 w-3 mr-1" />
-                      Chẩn đoán: {test.diagnosisTime}
+                      Thời gian chẩn đoán chính xác: {test.diagnosisTime}
+                    </p>
+                  )}
+                  {!test.diagnosisTime && (
+                    <p className="text-xs text-red-600 flex items-center mt-1">
+                      <Clock className="h-3 w-3 mr-1" />
+                      Chưa hoàn thành chẩn đoán
                     </p>
                   )}
                 </div>
