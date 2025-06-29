@@ -10,13 +10,7 @@ import {
   Search, 
   Eye, 
   Download, 
-  Calendar, 
-  Phone, 
-  MapPin, 
-  User,
-  Activity,
   FileText,
-  Clock,
   RefreshCw
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -230,10 +224,12 @@ export const PatientManagement = ({ userRole }: PatientManagementProps) => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Bệnh nhân</TableHead>
-                <TableHead>Tuổi/Giới tính</TableHead>
-                <TableHead>Bác sĩ chỉ định</TableHead>
-                <TableHead>Lần khám gần nhất</TableHead>
+                <TableHead>Mã BN</TableHead>
+                <TableHead>Họ tên</TableHead>
+                <TableHead>Tuổi</TableHead>
+                <TableHead>Giới tính</TableHead>
+                <TableHead>Số điện thoại</TableHead>
+                <TableHead>Địa chỉ</TableHead>
                 <TableHead>Trạng thái</TableHead>
                 <TableHead>Thao tác</TableHead>
               </TableRow>
@@ -241,21 +237,12 @@ export const PatientManagement = ({ userRole }: PatientManagementProps) => {
             <TableBody>
               {filteredPatients.map((patient) => (
                 <TableRow key={patient.id}>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{patient.name}</p>
-                      <p className="text-sm text-slate-600">{patient.code}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm">{patient.age} tuổi, {patient.gender}</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm">{patient.assignedDoctor}</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm">{patient.lastVisit}</span>
-                  </TableCell>
+                  <TableCell className="font-medium">{patient.code}</TableCell>
+                  <TableCell>{patient.name}</TableCell>
+                  <TableCell>{patient.age}</TableCell>
+                  <TableCell>{patient.gender}</TableCell>
+                  <TableCell>{patient.phone}</TableCell>
+                  <TableCell>{patient.address}</TableCell>
                   <TableCell>
                     <Badge variant={patient.status === 'active' ? "default" : "secondary"}>
                       {patient.status === 'active' ? 'Đang điều trị' : 'Ngưng điều trị'}

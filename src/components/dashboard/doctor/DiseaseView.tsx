@@ -104,7 +104,7 @@ export const DiseaseView = () => {
                 <TableHead>Mã ICD</TableHead>
                 <TableHead>Chuyên khoa</TableHead>
                 <TableHead>Mức độ nguy cơ</TableHead>
-                <TableHead>Chỉ số liên quan</TableHead>
+                <TableHead>Số chỉ số liên quan</TableHead>
                 <TableHead className="text-right">Thao tác</TableHead>
               </TableRow>
             </TableHeader>
@@ -115,20 +115,7 @@ export const DiseaseView = () => {
                   <TableCell>{disease.code}</TableCell>
                   <TableCell>{disease.category}</TableCell>
                   <TableCell>{getRiskBadge(disease.riskLevel)}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {disease.biomarkers.slice(0, 2).map((marker, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
-                          {marker}
-                        </Badge>
-                      ))}
-                      {disease.biomarkers.length > 2 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{disease.biomarkers.length - 2}
-                        </Badge>
-                      )}
-                    </div>
-                  </TableCell>
+                  <TableCell>{disease.biomarkers.length} chỉ số</TableCell>
                   <TableCell className="text-right">
                     <Dialog>
                       <DialogTrigger asChild>
