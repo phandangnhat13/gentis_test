@@ -89,9 +89,6 @@ const DoctorSidebar = ({ activeTab, setActiveTab, userRole }: {
                     isActive={activeTab === item.id}
                     onClick={() => setActiveTab(item.id)}
                     className="w-full justify-start"
-                    disabled={
-                      (item.id === 'tests') && userRole === 'collaborator'
-                    }
                   >
                     <item.icon className="h-4 w-4 mr-3" />
                     <span>{item.label}</span>
@@ -114,11 +111,7 @@ export const DoctorDashboard = ({ user, onLogout }: DoctorDashboardProps) => {
       case 'patients':
         return <PatientManagement userRole={user.role} />;
       case 'tests':
-        return user.role !== 'collaborator' ? (
-          <TestManagement />
-        ) : (
-          <TestManagement userRole="collaborator" />
-        );
+        return <TestManagement />;
       case 'analysis':
         return user.role !== 'collaborator' ? (
           <TestAnalysis userRole={user.role} />
