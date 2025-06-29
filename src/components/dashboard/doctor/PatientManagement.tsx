@@ -5,10 +5,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   Search, 
+  Eye, 
   Download, 
-  Eye
+  Calendar, 
+  Phone, 
+  MapPin, 
+  User,
+  Activity,
+  FileText,
+  Clock,
+  RefreshCw
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -27,6 +36,9 @@ interface PatientManagementProps {
 export const PatientManagement = ({ userRole }: PatientManagementProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
+  const [showConclusionDialog, setShowConclusionDialog] = useState(false);
+  const [conclusion, setConclusion] = useState('');
+  const isCollaborator = userRole === 'collaborator';
   const { toast } = useToast();
 
   const [patients] = useState([
@@ -41,7 +53,24 @@ export const PatientManagement = ({ userRole }: PatientManagementProps) => {
       assignedDoctor: 'BS. Trần Văn B',
       assignedDate: '2024-01-10',
       lastVisit: '2024-01-15',
-      status: 'active'
+      status: 'active',
+      tests: [
+        {
+          id: 1,
+          code: 'XN_240115_001',
+          date: '2024-01-15',
+          testDateTime: '2024-01-15 09:30:45',
+          diagnosisTime: '2024-01-15 14:35:27',
+          diagnosis: 'Tiểu đường type 2',
+          riskScore: 85,
+          biomarkers: {
+            glucose: 180,
+            hba1c: 8.5,
+            cholesterol: 240
+          },
+          doctorConclusion: 'Bệnh nhân cần điều chỉnh chế độ ăn uống và dùng thuốc theo chỉ định'
+        }
+      ]
     },
     {
       id: 2,
@@ -54,9 +83,65 @@ export const PatientManagement = ({ userRole }: PatientManagementProps) => {
       assignedDoctor: 'BS. Nguyễn Thị C',
       assignedDate: '2024-01-12',
       lastVisit: '2024-01-14',
-      status: 'active'
+      status: 'active',
+      tests: [
+        {
+          id: 2,
+          code: 'XN_240114_002',
+          date: '2024-01-14',
+          testDateTime: '2024-01-14 14:20:18',
+          diagnosisTime: '2024-01-14 10:22:15',
+          diagnosis: 'Rối loạn lipid máu',
+          riskScore: 65,
+          biomarkers: {
+            totalCholesterol: 220,
+            ldl: 140,
+            hdl: 45
+          },
+          doctorConclusion: ''
+        }
+      ]
     }
   ]);
+
+  const handleReAnalyze = (patient: any, test: any) => {
+    const newDiagnosisTime = new Date().toLocaleString('vi-VN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+    
+    toast({
+      title: "Phân tích lại hoàn tất",
+      description: `Xét nghiệm ${test.code} của bệnh nhân ${patient.name} đã được phân tích lại`,
+    });
+    
+    console.log('Phân tích lại:', {
+      patientCode: patient.code,
+      testCode: test.code,
+      newDiagnosisTime,
+      oldRiskScore: test.riskScore
+    });
+  };
+
+  const handleSaveConclusion = (patient: any, test: any) => {
+    toast({
+      title: "Lưu kết luận thành công",
+      description: `Kết luận cho bệnh nhân ${patient.name} đã được lưu`,
+    });
+    
+    console.log('Lưu kết luận:', {
+      patientCode: patient.code,
+      testCode: test.code,
+      conclusion
+    });
+    
+    setShowConclusionDialog(false);
+    setConclusion('');
+  };
 
   const handleDownloadPDF = (patient: any) => {
     const pdfContent = `
@@ -76,17 +161,17 @@ export const PatientManagement = ({ userRole }: PatientManagementProps) => {
       - Trạng thái: ${patient.status === 'active' ? 'Đang điều trị' : 'Ngưng điều trị'}
       
       LỊCH SỬ XÉT NGHIỆM CHI TIẾT:
-      - Mã xét nghiệm: XN_240115_001
-      - Ngày xét nghiệm: 2024-01-15
-      - Thời gian xét nghiệm chính xác: 2024-01-15 09:30:45
-      - Thời gian chẩn đoán chính xác: 2024-01-15 14:35:27
-      - Chẩn đoán: Tiểu đường type 2
-      - Điểm nguy cơ: 85/100
+      ${patient.tests.map((test: any) => `
+      - Mã xét nghiệm: ${test.code}
+      - Ngày xét nghiệm: ${test.date}
+      - Thời gian xét nghiệm chính xác: ${test.testDateTime}
+      - Thời gian chẩn đoán chính xác: ${test.diagnosisTime}
+      - Chẩn đoán: ${test.diagnosis}
+      - Điểm nguy cơ: ${test.riskScore}/100
       - Chỉ số sinh học:
-        + GLUCOSE: 180
-        + HBA1C: 8.5
-        + CHOLESTEROL: 240
-      - Kết luận bác sĩ: Bệnh nhân cần điều chỉnh chế độ ăn uống và dùng thuốc theo chỉ định
+        ${Object.entries(test.biomarkers).map(([key, value]) => `  + ${key.toUpperCase()}: ${value}`).join('\n        ')}
+      - Kết luận bác sĩ: ${test.doctorConclusion || 'Chưa có kết luận'}
+      `).join('\n      ')}
       
       ============================
       Báo cáo được tạo bởi SLSS Gentis
@@ -121,57 +206,70 @@ export const PatientManagement = ({ userRole }: PatientManagementProps) => {
         <h2 className="text-2xl font-bold text-slate-800">Quản lý bệnh nhân</h2>
       </div>
 
+      {/* Search */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Input
+              placeholder="Tìm kiếm theo tên hoặc mã bệnh nhân..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Patient Table */}
       <Card>
         <CardHeader>
-          <div className="flex items-center space-x-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input
-                placeholder="Tìm kiếm theo tên hoặc mã bệnh nhân..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
+          <CardTitle>Danh sách bệnh nhân</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Mã BN</TableHead>
-                <TableHead>Họ tên</TableHead>
-                <TableHead>Tuổi</TableHead>
-                <TableHead>Giới tính</TableHead>
-                <TableHead>Số điện thoại</TableHead>
-                <TableHead>Địa chỉ</TableHead>
+                <TableHead>Bệnh nhân</TableHead>
+                <TableHead>Tuổi/Giới tính</TableHead>
+                <TableHead>Bác sĩ chỉ định</TableHead>
+                <TableHead>Lần khám gần nhất</TableHead>
                 <TableHead>Trạng thái</TableHead>
-                <TableHead className="text-right">Thao tác</TableHead>
+                <TableHead>Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredPatients.map((patient) => (
                 <TableRow key={patient.id}>
-                  <TableCell className="font-medium">{patient.code}</TableCell>
-                  <TableCell>{patient.name}</TableCell>
-                  <TableCell>{patient.age}</TableCell>
-                  <TableCell>{patient.gender}</TableCell>
-                  <TableCell>{patient.phone}</TableCell>
-                  <TableCell>{patient.address}</TableCell>
+                  <TableCell>
+                    <div>
+                      <p className="font-medium">{patient.name}</p>
+                      <p className="text-sm text-slate-600">{patient.code}</p>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm">{patient.age} tuổi, {patient.gender}</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm">{patient.assignedDoctor}</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm">{patient.lastVisit}</span>
+                  </TableCell>
                   <TableCell>
                     <Badge variant={patient.status === 'active' ? "default" : "secondary"}>
                       {patient.status === 'active' ? 'Đang điều trị' : 'Ngưng điều trị'}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex space-x-2 justify-end">
+                  <TableCell>
+                    <div className="flex space-x-2">
                       <Button 
                         size="sm" 
                         variant="outline"
                         onClick={() => setSelectedPatient(patient)}
                       >
                         <Eye className="h-3 w-3 mr-1" />
-                        Xem
+                        Chi tiết
                       </Button>
                       <Button 
                         size="sm" 
@@ -190,55 +288,84 @@ export const PatientManagement = ({ userRole }: PatientManagementProps) => {
         </CardContent>
       </Card>
 
-      {/* Patient Detail Dialog - Basic Info Only */}
+      {/* Patient Detail Dialog - Simplified */}
       {selectedPatient && (
         <Dialog open={!!selectedPatient} onOpenChange={() => setSelectedPatient(null)}>
-          <DialogContent>
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Thông tin cơ bản - {selectedPatient.name}</DialogTitle>
+              <DialogTitle>Thông tin tóm tắt - {selectedPatient.name}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="bg-slate-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-slate-800 mb-3">Thông tin cơ bản</h3>
                 <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <label className="text-slate-600">Mã bệnh nhân:</label>
-                    <p className="font-medium">{selectedPatient.code}</p>
-                  </div>
                   <div>
                     <label className="text-slate-600">Họ tên:</label>
                     <p className="font-medium">{selectedPatient.name}</p>
                   </div>
                   <div>
-                    <label className="text-slate-600">Tuổi:</label>
-                    <p className="font-medium">{selectedPatient.age} tuổi</p>
+                    <label className="text-slate-600">Mã bệnh nhân:</label>
+                    <p className="font-medium">{selectedPatient.code}</p>
                   </div>
                   <div>
-                    <label className="text-slate-600">Giới tính:</label>
-                    <p className="font-medium">{selectedPatient.gender}</p>
+                    <label className="text-slate-600">Tuổi/Giới tính:</label>
+                    <p className="font-medium">{selectedPatient.age} tuổi, {selectedPatient.gender}</p>
                   </div>
                   <div>
-                    <label className="text-slate-600">Số điện thoại:</label>
-                    <p className="font-medium">{selectedPatient.phone}</p>
-                  </div>
-                  <div>
-                    <label className="text-slate-600">Địa chỉ:</label>
-                    <p className="font-medium">{selectedPatient.address}</p>
+                    <label className="text-slate-600">Bác sĩ chỉ định:</label>
+                    <p className="font-medium">{selectedPatient.assignedDoctor}</p>
                   </div>
                 </div>
+              </div>
+
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-blue-800 mb-2">Xét nghiệm gần nhất</h3>
+                {selectedPatient.tests.length > 0 ? (
+                  <div className="text-sm text-blue-700">
+                    <p><strong>Mã XN:</strong> {selectedPatient.tests[0].code}</p>
+                    <p><strong>Chẩn đoán:</strong> {selectedPatient.tests[0].diagnosis}</p>
+                    <p><strong>Điểm nguy cơ:</strong> {selectedPatient.tests[0].riskScore}/100</p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-blue-700">Chưa có xét nghiệm</p>
+                )}
               </div>
 
               <div className="bg-yellow-50 p-4 rounded-lg">
                 <h3 className="font-semibold text-yellow-800 mb-2">Lưu ý quan trọng</h3>
                 <p className="text-yellow-700 text-sm">
-                  • Thông tin chi tiết về lịch sử xét nghiệm, kết quả chẩn đoán được cung cấp trong file tải về.<br/>
+                  • Thông tin chi tiết về bệnh nhân, lịch sử xét nghiệm được cung cấp trong file kết quả tải về.<br/>
                   • Để xem đầy đủ thông tin, vui lòng tải file thông tin chi tiết.<br/>
-                  • Thông tin hiển thị ở đây chỉ mang tính chất tham khảo cơ bản.
+                  • Thông tin hiển thị ở đây chỉ mang tính chất tham khảo tổng quan.
                 </p>
               </div>
 
               <div className="flex space-x-2">
+                {selectedPatient.tests.length > 0 && (
+                  <>
+                    {!isCollaborator && (
+                      <Button 
+                        variant="outline"
+                        onClick={() => handleReAnalyze(selectedPatient, selectedPatient.tests[0])}
+                      >
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Phân tích lại
+                      </Button>
+                    )}
+                    <Button 
+                      variant="outline"
+                      onClick={() => {
+                        setConclusion(selectedPatient.tests[0].doctorConclusion || '');
+                        setShowConclusionDialog(true);
+                      }}
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      {selectedPatient.tests[0].doctorConclusion ? 'Sửa kết luận' : 'Nhập kết luận'}
+                    </Button>
+                  </>
+                )}
                 <Button 
-                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                  className="bg-blue-600 hover:bg-blue-700"
                   onClick={() => {
                     handleDownloadPDF(selectedPatient);
                     setSelectedPatient(null);
@@ -252,6 +379,47 @@ export const PatientManagement = ({ userRole }: PatientManagementProps) => {
                   onClick={() => setSelectedPatient(null)}
                 >
                   Đóng
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Conclusion Dialog */}
+      {showConclusionDialog && selectedPatient && (
+        <Dialog open={showConclusionDialog} onOpenChange={setShowConclusionDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Kết luận cuối cùng - {selectedPatient.name}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Kết luận của bác sĩ:
+                </label>
+                <Textarea
+                  value={conclusion}
+                  onChange={(e) => setConclusion(e.target.value)}
+                  placeholder="Nhập kết luận cuối cùng..."
+                  rows={4}
+                />
+              </div>
+              
+              <div className="flex space-x-2">
+                <Button 
+                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                  onClick={() => handleSaveConclusion(selectedPatient, selectedPatient.tests[0])}
+                  disabled={!conclusion.trim()}
+                >
+                  Lưu kết luận
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setShowConclusionDialog(false)}
+                >
+                  Hủy
                 </Button>
               </div>
             </div>
