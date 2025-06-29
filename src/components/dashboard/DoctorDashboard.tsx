@@ -27,20 +27,20 @@ import {
 } from "@/components/ui/sidebar"
 import { 
   User, 
-  FileText, 
   Users, 
   TestTube, 
   BarChart3, 
   Database, 
   BookOpen,
-  Activity
+  Activity,
+  UserCog
 } from 'lucide-react';
-import { ReportsView } from './doctor/ReportsView';
 import { PatientManagement } from './doctor/PatientManagement';
 import { TestManagement } from './doctor/TestManagement';
 import { DiseaseView } from './doctor/DiseaseView';
 import { TestAnalysis } from './doctor/TestAnalysis';
 import { DataAnalysis } from './doctor/DataAnalysis';
+import { ProfileManagement } from './doctor/ProfileManagement';
 
 interface DoctorDashboardProps {
   user: {
@@ -52,12 +52,12 @@ interface DoctorDashboardProps {
 }
 
 const menuItems = [
-  { id: 'reports', label: 'Báo cáo chẩn đoán', icon: FileText },
   { id: 'patients', label: 'Quản lý bệnh nhân', icon: Users },
   { id: 'tests', label: 'Quản lý xét nghiệm', icon: TestTube },
   { id: 'analysis', label: 'Phân tích số liệu', icon: BarChart3 },
   { id: 'batch', label: 'Phân tích hàng loạt', icon: Database },
   { id: 'diseases', label: 'Danh mục bệnh', icon: BookOpen },
+  { id: 'profile', label: 'Hồ sơ cá nhân', icon: UserCog },
 ];
 
 const DoctorSidebar = ({ activeTab, setActiveTab, userRole }: { 
@@ -65,6 +65,14 @@ const DoctorSidebar = ({ activeTab, setActiveTab, userRole }: {
   setActiveTab: (tab: string) => void;
   userRole: string;
 }) => {
+  const filteredMenuItems = menuItems.filter(item => {
+    if (userRole === 'collaborator') {
+      // Bác sĩ cộng tác không có quyền truy cập phân tích số liệu và phân tích hàng loạt
+      return !['analysis', 'batch'].includes(item.id);
+    }
+    return true;
+  });
+
   return (
     <Sidebar className="w-64">
       <SidebarContent>
@@ -75,14 +83,14 @@ const DoctorSidebar = ({ activeTab, setActiveTab, userRole }: {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {filteredMenuItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
                     isActive={activeTab === item.id}
                     onClick={() => setActiveTab(item.id)}
                     className="w-full justify-start"
                     disabled={
-                      (item.id === 'tests' || item.id === 'batch') && userRole === 'collaborator'
+                      (item.id === 'tests') && userRole === 'collaborator'
                     }
                   >
                     <item.icon className="h-4 w-4 mr-3" />
@@ -99,24 +107,26 @@ const DoctorSidebar = ({ activeTab, setActiveTab, userRole }: {
 };
 
 export const DoctorDashboard = ({ user, onLogout }: DoctorDashboardProps) => {
-  const [activeTab, setActiveTab] = useState('reports');
+  const [activeTab, setActiveTab] = useState('patients');
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'reports':
-        return <ReportsView userRole={user.role} />;
       case 'patients':
         return <PatientManagement userRole={user.role} />;
       case 'tests':
         return user.role !== 'collaborator' ? (
           <TestManagement />
         ) : (
+          <TestManagement userRole="collaborator" />
+        );
+      case 'analysis':
+        return user.role !== 'collaborator' ? (
+          <TestAnalysis userRole={user.role} />
+        ) : (
           <div className="text-center py-12">
             <p className="text-slate-600">Bác sĩ cộng tác không có quyền truy cập chức năng này</p>
           </div>
         );
-      case 'analysis':
-        return <TestAnalysis userRole={user.role} />;
       case 'batch':
         return user.role !== 'collaborator' ? (
           <DataAnalysis />
@@ -127,8 +137,10 @@ export const DoctorDashboard = ({ user, onLogout }: DoctorDashboardProps) => {
         );
       case 'diseases':
         return <DiseaseView />;
+      case 'profile':
+        return <ProfileManagement user={user} />;
       default:
-        return <ReportsView userRole={user.role} />;
+        return <PatientManagement userRole={user.role} />;
     }
   };
 
@@ -147,7 +159,7 @@ export const DoctorDashboard = ({ user, onLogout }: DoctorDashboardProps) => {
               <div className="flex items-center">
                 <SidebarTrigger className="mr-4" />
                 <h1 className="text-2xl font-bold text-slate-800">
-                  Chào mừng, {user.name} ({user.role})
+                  Chào mừng, {user.name} ({user.role === 'collaborator' ? 'Bác sĩ cộng tác' : user.role === 'doctor' ? 'Bác sĩ Gentis' : user.role})
                 </h1>
               </div>
               <DropdownMenu>
@@ -162,8 +174,8 @@ export const DoctorDashboard = ({ user, onLogout }: DoctorDashboardProps) => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>Tài khoản</DropdownMenuLabel>
-                  <DropdownMenuItem>
-                    Hồ sơ
+                  <DropdownMenuItem onClick={() => setActiveTab('profile')}>
+                    Hồ sơ cá nhân
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={onLogout}>

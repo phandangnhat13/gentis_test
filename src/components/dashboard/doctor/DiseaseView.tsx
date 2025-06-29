@@ -116,17 +116,9 @@ export const DiseaseView = () => {
                   <TableCell>{disease.category}</TableCell>
                   <TableCell>{getRiskBadge(disease.riskLevel)}</TableCell>
                   <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {disease.biomarkers.slice(0, 2).map((marker, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
-                          {marker}
-                        </Badge>
-                      ))}
-                      {disease.biomarkers.length > 2 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{disease.biomarkers.length - 2}
-                        </Badge>
-                      )}
+                    <div className="text-sm text-slate-600">
+                      {disease.biomarkers.slice(0, 2).join(', ')}
+                      {disease.biomarkers.length > 2 && ` +${disease.biomarkers.length - 2}`}
                     </div>
                   </TableCell>
                   <TableCell className="text-right">

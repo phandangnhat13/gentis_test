@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, FileText, Search, Upload, Edit, Eye, Save, X } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Plus, Search, Upload, Edit, Eye, Save, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Disease {
@@ -98,30 +98,22 @@ export const DiseaseManagement = () => {
     });
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>, type: 'csv' | 'description' | 'summary') => {
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      console.log(`File ${type} đã chọn:`, file.name, file.size, file.type);
+      console.log(`File CSV đã chọn:`, file.name, file.size, file.type);
       
-      if (type === 'csv') {
-        // Simulate CSV processing
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const content = e.target?.result as string;
-          console.log('Nội dung CSV:', content.substring(0, 200) + '...');
-          
-          toast({
-            title: "Upload thành công",
-            description: `Đã tải lên file CSV: ${file.name}`,
-          });
-        };
-        reader.readAsText(file);
-      } else {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target?.result as string;
+        console.log('Nội dung CSV:', content.substring(0, 200) + '...');
+        
         toast({
           title: "Upload thành công",
-          description: `Đã tải lên file ${type}: ${file.name}`,
+          description: `Đã tải lên file CSV: ${file.name}`,
         });
-      }
+      };
+      reader.readAsText(file);
     }
   };
 
@@ -155,7 +147,7 @@ export const DiseaseManagement = () => {
                   <input
                     type="file"
                     accept=".csv"
-                    onChange={(e) => handleFileUpload(e, 'csv')}
+                    onChange={handleFileUpload}
                     className="hidden"
                     id="csv-upload"
                   />
@@ -200,60 +192,65 @@ export const DiseaseManagement = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredDiseases.map((disease) => (
-              <Card key={disease.id} className="border border-slate-200">
-                <CardHeader className="pb-3">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-lg">{disease.name}</CardTitle>
-                      <p className="text-sm text-slate-600">{disease.code} - {disease.category}</p>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tên bệnh</TableHead>
+                <TableHead>Mã ICD</TableHead>
+                <TableHead>Danh mục</TableHead>
+                <TableHead>Tài liệu</TableHead>
+                <TableHead>Chỉ số liên quan</TableHead>
+                <TableHead>Yếu tố nguy cơ</TableHead>
+                <TableHead className="text-right">Thao tác</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredDiseases.map((disease) => (
+                <TableRow key={disease.id}>
+                  <TableCell className="font-medium">{disease.name}</TableCell>
+                  <TableCell>{disease.code}</TableCell>
+                  <TableCell>{disease.category}</TableCell>
+                  <TableCell>
+                    <div className="flex space-x-1">
+                      <Badge variant={disease.hasDescription ? 'default' : 'secondary'} className="text-xs">
+                        {disease.hasDescription ? 'Mô tả' : 'Chưa có'}
+                      </Badge>
+                      <Badge variant={disease.hasSummary ? 'default' : 'secondary'} className="text-xs">
+                        {disease.hasSummary ? 'Tóm tắt' : 'Chưa có'}
+                      </Badge>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-600">Tài liệu mô tả:</span>
-                    <Badge variant={disease.hasDescription ? 'default' : 'secondary'}>
-                      {disease.hasDescription ? 'Có' : 'Chưa có'}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-600">Tóm tắt bệnh:</span>
-                    <Badge variant={disease.hasSummary ? 'default' : 'secondary'}>
-                      {disease.hasSummary ? 'Có' : 'Chưa có'}
-                    </Badge>
-                  </div>
-                  <div className="text-sm text-slate-600">
-                    <strong>Chỉ số liên quan:</strong> {disease.relatedTests.join(', ')}
-                  </div>
-                  <div className="text-sm text-slate-600">
-                    <strong>Yếu tố nguy cơ:</strong> {disease.riskFactors} yếu tố
-                  </div>
-                  <div className="flex space-x-2 pt-2">
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      className="flex-1"
-                      onClick={() => setEditingDisease(disease)}
-                    >
-                      <Edit className="h-3 w-3 mr-1" />
-                      Sửa
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      className="flex-1"
-                      onClick={() => setViewingDisease(disease)}
-                    >
-                      <Eye className="h-3 w-3 mr-1" />
-                      Xem
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm text-slate-600">
+                      {disease.relatedTests.slice(0, 2).join(', ')}
+                      {disease.relatedTests.length > 2 && ` +${disease.relatedTests.length - 2}`}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm font-medium">{disease.riskFactors}</span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex space-x-2 justify-end">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => setViewingDisease(disease)}
+                      >
+                        <Eye className="h-3 w-3" />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => setEditingDisease(disease)}
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 
