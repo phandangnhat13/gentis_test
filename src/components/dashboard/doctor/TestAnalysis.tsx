@@ -4,321 +4,515 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import { 
+  Search, 
+  Filter, 
+  FileText, 
+  Download, 
+  AlertTriangle, 
+  TrendingUp, 
   Calendar,
-  Search,
-  Filter,
-  Download,
+  Activity,
+  BarChart3,
   FileSpreadsheet,
-  TrendingUp,
-  TrendingDown,
-  AlertTriangle
+  Clock
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell
-} from 'recharts';
 
 interface TestAnalysisProps {
   userRole: string;
 }
 
 export const TestAnalysis = ({ userRole }: TestAnalysisProps) => {
-  const [dateRange, setDateRange] = useState('30days');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedDoctor, setSelectedDoctor] = useState('all');
+  const [patientCodeFilter, setPatientCodeFilter] = useState('');
+  const [dateFilter, setDateFilter] = useState({ start: '', end: '' });
+  const [diseaseFilter, setDiseaseFilter] = useState<'all' | 'with' | 'without'>('all');
+  const [analyzingTest, setAnalyzingTest] = useState<any>(null);
+  const [finalConclusion, setFinalConclusion] = useState('');
+  const isCollaborator = userRole === 'collaborator';
   const { toast } = useToast();
 
-  // Sample data for charts
-  const monthlyData = [
-    { month: 'T1', tests: 120, positive: 85, negative: 35 },
-    { month: 'T2', tests: 135, positive: 92, negative: 43 },
-    { month: 'T3', tests: 150, positive: 108, negative: 42 },
-    { month: 'T4', tests: 128, positive: 89, negative: 39 },
-    { month: 'T5', tests: 165, positive: 115, negative: 50 },
-    { month: 'T6', tests: 142, positive: 98, negative: 44 },
-  ];
+  const [tests] = useState([
+    {
+      id: 1,
+      code: 'XN_240115_001',
+      patientCode: 'PT001',
+      patientName: 'Nguyễn Văn A',
+      date: '2024-01-15',
+      diagnosisTime: '2024-01-15 14:35:27',
+      hasDiagnosis: true,
+      diagnosis: 'Tiểu đường type 2',
+      riskScore: 85,
+      biomarkers: {
+        glucose: { value: 180, normal: '70-100', status: 'high', tier: 1 },
+        hba1c: { value: 8.5, normal: '4-6', status: 'high', tier: 1 },
+        cholesterol: { value: 240, normal: '<200', status: 'high', tier: 2 }
+      },
+      doctorConclusion: '',
+      analysisComplete: true
+    },
+    {
+      id: 2,
+      code: 'XN_240114_002',
+      patientCode: 'PT002',
+      patientName: 'Trần Thị B',
+      date: '2024-01-14',
+      diagnosisTime: '2024-01-14 10:22:15',
+      hasDiagnosis: true,
+      diagnosis: 'Rối loạn lipid máu',
+      riskScore: 65,
+      biomarkers: {
+        totalCholesterol: { value: 220, normal: '<200', status: 'high', tier: 2 },
+        ldl: { value: 140, normal: '<100', status: 'high', tier: 1 },
+        hdl: { value: 45, normal: '>40', status: 'normal', tier: 2 }
+      },
+      doctorConclusion: 'Bệnh nhân cần điều chỉnh chế độ ăn uống và tăng cường vận động',
+      analysisComplete: true
+    },
+    {
+      id: 3,
+      code: 'XN_240113_003',
+      patientCode: 'PT003',
+      patientName: 'Lê Văn C',
+      date: '2024-01-13',
+      diagnosisTime: '2024-01-13 16:45:33',
+      hasDiagnosis: false,
+      diagnosis: 'Bình thường',
+      riskScore: 25,
+      biomarkers: {
+        glucose: { value: 95, normal: '70-100', status: 'normal', tier: 1 },
+        cholesterol: { value: 185, normal: '<200', status: 'normal', tier: 2 }
+      },
+      doctorConclusion: '',
+      analysisComplete: true
+    },
+    {
+      id: 4,
+      code: 'XN_240112_004',
+      patientCode: 'PT004',
+      patientName: 'Phạm Văn D',
+      date: '2024-01-12',
+      diagnosisTime: '',
+      hasDiagnosis: true,
+      diagnosis: 'Gan nhiễm mỡ',
+      riskScore: 78,
+      biomarkers: {
+        alt: { value: 85, normal: '7-56', status: 'high', tier: 1 },
+        ast: { value: 72, normal: '10-40', status: 'high', tier: 1 },
+        ggt: { value: 95, normal: '9-48', status: 'high', tier: 2 }
+      },
+      doctorConclusion: '',
+      analysisComplete: false
+    }
+  ]);
 
-  const diseaseData = [
-    { name: 'Tiểu đường type 2', value: 35, color: '#8884d8' },
-    { name: 'Tăng huyết áp', value: 28, color: '#82ca9d' },
-    { name: 'Rối loạn lipid máu', value: 22, color: '#ffc658' },
-    { name: 'Gan nhiễm mỡ', value: 15, color: '#ff7300' },
-  ];
+  const calculateRiskScore = (biomarkers: any) => {
+    let tier1Count = 0;
+    let tier2Count = 0;
+    
+    Object.values(biomarkers).forEach((marker: any) => {
+      if (marker.status !== 'normal') {
+        if (marker.tier === 1) tier1Count++;
+        else if (marker.tier === 2) tier2Count++;
+      }
+    });
+    
+    return 10 * tier1Count + 1 * tier2Count;
+  };
 
-  const doctorPerformance = [
-    { doctor: 'BS. Nguyễn A', accuracy: 94.5, tests: 85 },
-    { doctor: 'BS. Trần B', accuracy: 92.3, tests: 78 },
-    { doctor: 'BS. Lê C', accuracy: 96.1, tests: 92 },
-    { doctor: 'BS. Phạm D', accuracy: 89.7, tests: 65 },
-  ];
+  const handleReAnalyze = (test: any) => {
+    const newRiskScore = calculateRiskScore(test.biomarkers);
+    const diagnosisTime = new Date().toLocaleString('vi-VN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+    
+    toast({
+      title: "Phân tích lại hoàn tất",
+      description: `Xét nghiệm ${test.code} đã được phân tích lại. Điểm nguy cơ: ${newRiskScore}`,
+    });
+    
+    console.log('Phân tích lại:', {
+      testCode: test.code,
+      oldRiskScore: test.riskScore,
+      newRiskScore,
+      diagnosisTime
+    });
+  };
 
-  const handleExportData = (type: 'excel' | 'pdf') => {
-    const exportData = {
-      dateRange,
-      totalTests: monthlyData.reduce((sum, item) => sum + item.tests, 0),
-      totalPositive: monthlyData.reduce((sum, item) => sum + item.positive, 0),
-      totalNegative: monthlyData.reduce((sum, item) => sum + item.negative, 0),
-      monthlyBreakdown: monthlyData,
-      diseaseDistribution: diseaseData,
-      doctorPerformance,
-      exportDate: new Date().toLocaleDateString('vi-VN'),
-      exportedBy: userRole === 'collaborator' ? 'Bác sĩ Cộng tác' : 'Bác sĩ Chính'
-    };
+  const handleSaveConclusion = (testId: number, conclusion: string) => {
+    toast({
+      title: "Lưu kết luận thành công",
+      description: "Kết luận cuối cùng của bác sĩ đã được lưu",
+    });
+    
+    console.log('Lưu kết luận:', { testId, conclusion });
+    setAnalyzingTest(null);
+    setFinalConclusion('');
+  };
 
-    const content = `
-BÁO CÁO PHÂN TÍCH SỐ LIỆU XÉT NGHIỆM
-=====================================
+  const handleExportTestData = (test: any) => {
+    const csvContent = `
+Mã xét nghiệm,${test.code}
+Mã bệnh nhân,${test.patientCode}
+Tên bệnh nhân,${test.patientName}
+Ngày xét nghiệm,${test.date}
+Thời gian chẩn đoán,${test.diagnosisTime || 'Chưa hoàn thành'}
+Chẩn đoán,${test.diagnosis}
+Điểm nguy cơ,${test.riskScore}
 
-Thời gian báo cáo: ${dateRange === '30days' ? '30 ngày qua' : dateRange === '90days' ? '90 ngày qua' : 'Năm nay'}
-Ngày xuất báo cáo: ${exportData.exportDate}
-Người xuất báo cáo: ${exportData.exportedBy}
+Chỉ số sinh học:
+Tên chỉ số,Giá trị,Khoảng bình thường,Trạng thái,Tier
+${Object.entries(test.biomarkers).map(([key, marker]: [string, any]) => 
+  `${key},${marker.value},${marker.normal},${marker.status},${marker.tier}`
+).join('\n')}
 
-PHÂN TÍCH THEO THÁNG:
-${monthlyData.map(item => `- ${item.month}: ${item.tests} xét nghiệm (${item.positive} dương tính, ${item.negative} âm tính)`).join('\n')}
+Kết luận bác sĩ:
+${test.doctorConclusion || 'Chưa có kết luận'}
+    `.trim();
 
-PHÂN BỐ BỆNH:
-${diseaseData.map(item => `- ${item.name}: ${item.value}%`).join('\n')}
-
-HIỆU SUẤT BÁC SĨ:
-${doctorPerformance.map(item => `- ${item.doctor}: ${item.accuracy}% độ chính xác (${item.tests} xét nghiệm)`).join('\n')}
-
-=====================================
-Báo cáo được tạo bởi SLSS Gentis
-    `;
-
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `BaoCaoPhunTich_${new Date().toISOString().split('T')[0]}.${type === 'excel' ? 'txt' : 'txt'}`;
+    link.download = `KetQuaXetNghiem_${test.code}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-
+    
     toast({
-      title: "Xuất báo cáo thành công",
-      description: `Báo cáo phân tích đã được xuất dưới dạng ${type.toUpperCase()}`,
+      title: "Xuất dữ liệu thành công",
+      description: `Dữ liệu xét nghiệm ${test.code} đã được xuất`,
     });
+  };
+
+  const filteredTests = tests.filter(test => {
+    const matchesSearch = test.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         test.patientName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesPatientCode = patientCodeFilter === '' || test.patientCode.includes(patientCodeFilter);
+    const matchesDateRange = (!dateFilter.start || test.date >= dateFilter.start) &&
+                            (!dateFilter.end || test.date <= dateFilter.end);
+    const matchesDisease = diseaseFilter === 'all' ||
+                          (diseaseFilter === 'with' && test.hasDiagnosis) ||
+                          (diseaseFilter === 'without' && !test.hasDiagnosis);
+    
+    return matchesSearch && matchesPatientCode && matchesDateRange && matchesDisease;
+  });
+
+  const stats = {
+    total: tests.length,
+    withDisease: tests.filter(t => t.hasDiagnosis).length,
+    withoutDisease: tests.filter(t => !t.hasDiagnosis).length,
+    needsConclusion: tests.filter(t => !t.doctorConclusion && t.analysisComplete).length
   };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-slate-800">Phân tích số liệu</h2>
+        <h2 className="text-2xl font-bold text-slate-800">Phân tích số liệu xét nghiệm</h2>
         <div className="flex space-x-2">
-          <Button 
-            variant="outline" 
-            onClick={() => handleExportData('excel')}
-          >
-            <FileSpreadsheet className="h-4 w-4 mr-2" />
-            Xuất Excel
+          <Button variant="outline">
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Thống kê tổng quan
           </Button>
-          <Button 
-            variant="outline"
-            onClick={() => handleExportData('pdf')}
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Xuất PDF
+          <Button className="bg-blue-600 hover:bg-blue-700">
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            Xuất toàn bộ dữ liệu
           </Button>
         </div>
       </div>
 
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <FileText className="h-8 w-8 text-blue-500" />
+              <div className="ml-3">
+                <p className="text-sm font-medium text-slate-600">Tổng xét nghiệm</p>
+                <p className="text-2xl font-bold text-blue-600">{stats.total}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <AlertTriangle className="h-8 w-8 text-red-500" />
+              <div className="ml-3">
+                <p className="text-sm font-medium text-slate-600">Có bệnh</p>
+                <p className="text-2xl font-bold text-red-600">{stats.withDisease}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <TrendingUp className="h-8 w-8 text-green-500" />
+              <div className="ml-3">
+                <p className="text-sm font-medium text-slate-600">Không bệnh</p>
+                <p className="text-2xl font-bold text-green-600">{stats.withoutDisease}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <Activity className="h-8 w-8 text-orange-500" />
+              <div className="ml-3">
+                <p className="text-sm font-medium text-slate-600">Cần kết luận</p>
+                <p className="text-2xl font-bold text-orange-600">{stats.needsConclusion}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Filters */}
       <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-wrap gap-4 items-center">
-            <div className="flex-1 min-w-48">
+        <CardHeader>
+          <CardTitle className="text-lg">Bộ lọc và tìm kiếm</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Tìm kiếm</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <Input
-                  placeholder="Tìm kiếm..."
+                  placeholder="Mã XN hoặc tên BN..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
                 />
               </div>
             </div>
-            <Select value={dateRange} onValueChange={setDateRange}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Chọn thời gian" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="30days">30 ngày qua</SelectItem>
-                <SelectItem value="90days">90 ngày qua</SelectItem>
-                <SelectItem value="year">Năm nay</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Chọn bác sĩ" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả bác sĩ</SelectItem>
-                <SelectItem value="doctor1">BS. Nguyễn A</SelectItem>
-                <SelectItem value="doctor2">BS. Trần B</SelectItem>
-                <SelectItem value="doctor3">BS. Lê C</SelectItem>
-              </SelectContent>
-            </Select>
+            <div>
+              <label className="block text-sm font-medium mb-1">Mã bệnh nhân</label>
+              <Input
+                placeholder="Nhập mã bệnh nhân"
+                value={patientCodeFilter}
+                onChange={(e) => setPatientCodeFilter(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Từ ngày</label>
+              <Input
+                type="date"
+                value={dateFilter.start}
+                onChange={(e) => setDateFilter({...dateFilter, start: e.target.value})}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Đến ngày</label>
+              <Input
+                type="date"
+                value={dateFilter.end}
+                onChange={(e) => setDateFilter({...dateFilter, end: e.target.value})}
+              />
+            </div>
+          </div>
+          <div className="mt-4">
+            <label className="block text-sm font-medium mb-2">Lọc theo kết quả</label>
+            <div className="flex space-x-4">
+              <Button 
+                variant={diseaseFilter === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setDiseaseFilter('all')}
+              >
+                Tất cả
+              </Button>
+              <Button 
+                variant={diseaseFilter === 'with' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setDiseaseFilter('with')}
+              >
+                Có bệnh
+              </Button>
+              <Button 
+                variant={diseaseFilter === 'without' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setDiseaseFilter('without')}
+              >
+                Không bệnh
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Monthly Trend Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <TrendingUp className="h-5 w-5 mr-2" />
-              Xu hướng xét nghiệm theo tháng
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="tests" stroke="#8884d8" name="Tổng XN" />
-                <Line type="monotone" dataKey="positive" stroke="#82ca9d" name="Dương tính" />
-                <Line type="monotone" dataKey="negative" stroke="#ffc658" name="Âm tính" />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+      {/* Test Results */}
+      <div className="space-y-4">
+        {filteredTests.map((test) => (
+          <Card key={test.id} className="border border-slate-200">
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle className="text-lg">{test.code}</CardTitle>
+                  <p className="text-sm text-slate-600">
+                    {test.patientName} ({test.patientCode}) • {test.date}
+                  </p>
+                  {test.diagnosisTime && (
+                    <p className="text-xs text-green-600 flex items-center mt-1">
+                      <Clock className="h-3 w-3 mr-1" />
+                      Thời gian chẩn đoán chính xác: {test.diagnosisTime}
+                    </p>
+                  )}
+                  {!test.diagnosisTime && (
+                    <p className="text-xs text-red-600 flex items-center mt-1">
+                      <Clock className="h-3 w-3 mr-1" />
+                      Chưa hoàn thành chẩn đoán
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge variant={test.hasDiagnosis ? "destructive" : "secondary"}>
+                    {test.hasDiagnosis ? 'Có bệnh' : 'Không bệnh'}
+                  </Badge>
+                  <Badge variant="outline">
+                    Điểm nguy cơ: {test.riskScore}
+                  </Badge>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <p className="text-sm font-medium text-blue-800">Chẩn đoán: {test.diagnosis}</p>
+              </div>
 
-        {/* Disease Distribution */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <AlertTriangle className="h-5 w-5 mr-2" />
-              Phân bố bệnh được phát hiện
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={diseaseData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {diseaseData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+              {/* Biomarkers */}
+              <div>
+                <h4 className="font-medium text-slate-800 mb-2">Chỉ số sinh học</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                  {Object.entries(test.biomarkers).map(([key, marker]: [string, any]) => (
+                    <div key={key} className={`p-2 rounded text-xs ${
+                      marker.status === 'high' ? 'bg-red-50 text-red-700' :
+                      marker.status === 'low' ? 'bg-blue-50 text-blue-700' :
+                      'bg-green-50 text-green-700'
+                    }`}>
+                      <div className="flex justify-between">
+                        <span className="font-medium">{key.toUpperCase()}</span>
+                        <Badge variant="outline" className="text-xs">
+                          Tier {marker.tier}
+                        </Badge>
+                      </div>
+                      <p className="font-bold">{marker.value}</p>
+                      <p className="text-xs opacity-70">BT: {marker.normal}</p>
+                    </div>
                   ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+                </div>
+              </div>
 
-        {/* Doctor Performance */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <TrendingDown className="h-5 w-5 mr-2" />
-              Hiệu suất bác sĩ
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={doctorPerformance}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="doctor" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="accuracy" fill="#8884d8" name="Độ chính xác (%)" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+              {/* Doctor's Conclusion */}
+              {test.doctorConclusion && (
+                <div className="bg-green-50 p-3 rounded-lg">
+                  <p className="text-sm font-medium text-green-800 mb-1">Kết luận bác sĩ:</p>
+                  <p className="text-sm text-green-700">{test.doctorConclusion}</p>
+                </div>
+              )}
 
-        {/* Monthly Comparison */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Calendar className="h-5 w-5 mr-2" />
-              So sánh theo tháng
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="positive" stackId="a" fill="#82ca9d" name="Dương tính" />
-                <Bar dataKey="negative" stackId="a" fill="#8884d8" name="Âm tính" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+              {/* Actions */}
+              <div className="flex space-x-2 pt-2 border-t border-slate-200">
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => handleExportTestData(test)}
+                >
+                  <Download className="h-3 w-3 mr-1" />
+                  Xuất CSV
+                </Button>
+                {!isCollaborator && test.analysisComplete && (
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => handleReAnalyze(test)}
+                  >
+                    <Activity className="h-3 w-3 mr-1" />
+                    Phân tích lại
+                  </Button>
+                )}
+                <Button 
+                  size="sm" 
+                  className="bg-blue-600 hover:bg-blue-700"
+                  onClick={() => {
+                    setAnalyzingTest(test);
+                    setFinalConclusion(test.doctorConclusion);
+                  }}
+                >
+                  <FileText className="h-3 w-3 mr-1" />
+                  {test.doctorConclusion ? 'Sửa kết luận' : 'Nhập kết luận'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      {/* Detailed Statistics Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Thống kê chi tiết</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse border border-slate-300">
-              <thead>
-                <tr className="bg-slate-50">
-                  <th className="border border-slate-300 p-2 text-left">Bác sĩ</th>
-                  <th className="border border-slate-300 p-2 text-center">Số XN</th>
-                  <th className="border border-slate-300 p-2 text-center">Dương tính</th>
-                  <th className="border border-slate-300 p-2 text-center">Âm tính</th>
-                  <th className="border border-slate-300 p-2 text-center">Độ chính xác</th>
-                  <th className="border border-slate-300 p-2 text-center">Trạng thái</th>
-                </tr>
-              </thead>
-              <tbody>
-                {doctorPerformance.map((doctor, index) => (
-                  <tr key={index} className="hover:bg-slate-50">
-                    <td className="border border-slate-300 p-2 font-medium">{doctor.doctor}</td>
-                    <td className="border border-slate-300 p-2 text-center">{doctor.tests}</td>
-                    <td className="border border-slate-300 p-2 text-center">{Math.round(doctor.tests * 0.7)}</td>
-                    <td className="border border-slate-300 p-2 text-center">{Math.round(doctor.tests * 0.3)}</td>
-                    <td className="border border-slate-300 p-2 text-center">{doctor.accuracy}%</td>
-                    <td className="border border-slate-300 p-2 text-center">
-                      <Badge variant={doctor.accuracy > 90 ? "default" : "secondary"}>
-                        {doctor.accuracy > 90 ? "Tốt" : "Cần cải thiện"}
-                      </Badge>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Doctor Conclusion Dialog */}
+      {analyzingTest && (
+        <Dialog open={!!analyzingTest} onOpenChange={() => setAnalyzingTest(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>
+                Kết luận cuối cùng - {analyzingTest.code}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="bg-slate-50 p-4 rounded-lg">
+                <h3 className="font-medium mb-2">Thông tin xét nghiệm</h3>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div><strong>Bệnh nhân:</strong> {analyzingTest.patientName}</div>
+                  <div><strong>Mã BN:</strong> {analyzingTest.patientCode}</div>
+                  <div><strong>Ngày XN:</strong> {analyzingTest.date}</div>
+                  <div><strong>Điểm nguy cơ:</strong> {analyzingTest.riskScore}</div>
+                </div>
+                <div className="mt-2">
+                  <strong>Chẩn đoán AI:</strong> {analyzingTest.diagnosis}
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Kết luận cuối cùng của bác sĩ:
+                </label>
+                <Textarea
+                  value={finalConclusion}
+                  onChange={(e) => setFinalConclusion(e.target.value)}
+                  placeholder="Nhập kết luận cuối cùng của bác sĩ..."
+                  rows={4}
+                />
+              </div>
+              
+              <div className="flex space-x-2">
+                <Button 
+                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                  onClick={() => handleSaveConclusion(analyzingTest.id, finalConclusion)}
+                  disabled={!finalConclusion.trim()}
+                >
+                  Lưu kết luận
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setAnalyzingTest(null)}
+                >
+                  Hủy
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
