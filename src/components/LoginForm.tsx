@@ -158,7 +158,7 @@ export const LoginForm = ({ onLogin }: LoginFormProps) => {
               onClick={() => handleLogin('doctor')}
               disabled={loading}
             >
-              Đăng nhập Bác sĩ Gentis
+              Đăng nhập Bác sĩ 
             </Button>
           </TabsContent>
           
@@ -168,7 +168,7 @@ export const LoginForm = ({ onLogin }: LoginFormProps) => {
               onClick={() => handleLogin('collaborator')}
               disabled={loading}
             >
-              Đăng nhập Bác sĩ cộng tác
+              Đăng nhập Bác sĩ Gentis
             </Button>
           </TabsContent>
         </Tabs>
