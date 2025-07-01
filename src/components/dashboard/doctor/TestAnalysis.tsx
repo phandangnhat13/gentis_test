@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -228,54 +227,6 @@ ${test.doctorConclusion || 'Chưa có kết luận'}
             Xuất toàn bộ dữ liệu
           </Button>
         </div>
-      </div>
-
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <FileText className="h-8 w-8 text-blue-500" />
-              <div className="ml-3">
-                <p className="text-sm font-medium text-slate-600">Tổng xét nghiệm</p>
-                <p className="text-2xl font-bold text-blue-600">{stats.total}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <AlertTriangle className="h-8 w-8 text-red-500" />
-              <div className="ml-3">
-                <p className="text-sm font-medium text-slate-600">Có bệnh</p>
-                <p className="text-2xl font-bold text-red-600">{stats.withDisease}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <TrendingUp className="h-8 w-8 text-green-500" />
-              <div className="ml-3">
-                <p className="text-sm font-medium text-slate-600">Không bệnh</p>
-                <p className="text-2xl font-bold text-green-600">{stats.withoutDisease}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <Activity className="h-8 w-8 text-orange-500" />
-              <div className="ml-3">
-                <p className="text-sm font-medium text-slate-600">Cần kết luận</p>
-                <p className="text-2xl font-bold text-orange-600">{stats.needsConclusion}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Filters */}
