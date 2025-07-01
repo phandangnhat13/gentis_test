@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, FileText, Search, Upload, Edit, Eye, Save, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -200,60 +200,60 @@ export const DiseaseManagement = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredDiseases.map((disease) => (
-              <Card key={disease.id} className="border border-slate-200">
-                <CardHeader className="pb-3">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-lg">{disease.name}</CardTitle>
-                      <p className="text-sm text-slate-600">{disease.code} - {disease.category}</p>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tên bệnh</TableHead>
+                <TableHead>Mã ICD</TableHead>
+                <TableHead>Danh mục</TableHead>
+                <TableHead>Tài liệu</TableHead>
+                <TableHead>Yếu tố nguy cơ</TableHead>
+                <TableHead>Thao tác</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredDiseases.map((disease) => (
+                <TableRow key={disease.id}>
+                  <TableCell className="font-medium">{disease.name}</TableCell>
+                  <TableCell>{disease.code}</TableCell>
+                  <TableCell>{disease.category}</TableCell>
+                  <TableCell>
+                    <div className="flex space-x-1">
+                      <Badge variant={disease.hasDescription ? 'default' : 'secondary'} className="text-xs">
+                        {disease.hasDescription ? 'Mô tả' : 'Chưa có mô tả'}
+                      </Badge>
+                      <Badge variant={disease.hasSummary ? 'default' : 'secondary'} className="text-xs">
+                        {disease.hasSummary ? 'Tóm tắt' : 'Chưa có tóm tắt'}
+                      </Badge>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-600">Tài liệu mô tả:</span>
-                    <Badge variant={disease.hasDescription ? 'default' : 'secondary'}>
-                      {disease.hasDescription ? 'Có' : 'Chưa có'}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-600">Tóm tắt bệnh:</span>
-                    <Badge variant={disease.hasSummary ? 'default' : 'secondary'}>
-                      {disease.hasSummary ? 'Có' : 'Chưa có'}
-                    </Badge>
-                  </div>
-                  <div className="text-sm text-slate-600">
-                    <strong>Chỉ số liên quan:</strong> {disease.relatedTests.join(', ')}
-                  </div>
-                  <div className="text-sm text-slate-600">
-                    <strong>Yếu tố nguy cơ:</strong> {disease.riskFactors} yếu tố
-                  </div>
-                  <div className="flex space-x-2 pt-2">
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      className="flex-1"
-                      onClick={() => setEditingDisease(disease)}
-                    >
-                      <Edit className="h-3 w-3 mr-1" />
-                      Sửa
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      className="flex-1"
-                      onClick={() => setViewingDisease(disease)}
-                    >
-                      <Eye className="h-3 w-3 mr-1" />
-                      Xem
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-red-600 font-medium">{disease.riskFactors}</span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => setEditingDisease(disease)}
+                      >
+                        <Edit className="h-3 w-3 mr-1" />
+                        Sửa
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => setViewingDisease(disease)}
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        Xem
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 
