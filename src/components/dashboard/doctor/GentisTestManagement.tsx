@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,14 +41,20 @@ export const GentisTestManagement = () => {
       riskSamples: 3,
       processingTime: '2h 15m',
       suggestedDiseases: ['Tiểu đường type 2', 'Rối loạn lipid', 'Gan nhiễm mỡ'],
+      patientInfo: {
+        name: 'Nguyễn Văn A',
+        age: 45,
+        gender: 'Nam',
+        patientCode: 'PT001'
+      },
       detailedBiomarkers: [
-        { name: 'Glucose', values: [180, 165, 200, 95, 88, 92, 175, 145, 190, 82, 78, 85, 195, 88, 92], normal: '70-100', unit: 'mg/dL' },
-        { name: 'HbA1c', values: [8.5, 7.8, 9.2, 5.1, 4.8, 5.3, 8.1, 7.2, 8.8, 4.9, 4.6, 5.0, 9.0, 5.2, 5.1], normal: '4-6', unit: '%' },
-        { name: 'Cholesterol', values: [260, 240, 280, 185, 175, 190, 250, 220, 270, 180, 170, 185, 275, 190, 180], normal: '<200', unit: 'mg/dL' },
-        { name: 'ALT', values: [45, 42, 48, 25, 22, 28, 44, 38, 46, 24, 21, 27, 47, 26, 25], normal: '7-56', unit: 'U/L' },
-        { name: 'AST', values: [38, 35, 41, 22, 19, 25, 37, 32, 39, 21, 18, 24, 40, 23, 22], normal: '10-40', unit: 'U/L' }
+        { name: 'Glucose', values: [180], normal: '70-100', unit: 'mg/dL', assessment: 'Tăng' },
+        { name: 'HbA1c', values: [8.5], normal: '4-6', unit: '%', assessment: 'Tăng' },
+        { name: 'Cholesterol', values: [260], normal: '<200', unit: 'mg/dL', assessment: 'Tăng' },
+        { name: 'ALT', values: [45], normal: '7-56', unit: 'U/L', assessment: 'Trong ngưỡng' },
+        { name: 'AST', values: [38], normal: '10-40', unit: 'U/L', assessment: 'Trong ngưỡng' }
       ],
-      patientCodes: ['PT001', 'PT002', 'PT003', 'PT004', 'PT005', 'PT006', 'PT007', 'PT008', 'PT009', 'PT010', 'PT011', 'PT012', 'PT013', 'PT014', 'PT015']
+      patientCodes: ['PT001']
     },
     {
       id: 2,
@@ -59,13 +66,19 @@ export const GentisTestManagement = () => {
       riskSamples: 2,
       processingTime: '1h 30m',
       suggestedDiseases: ['Rối loạn lipid máu', 'Xơ vữa động mạch'],
+      patientInfo: {
+        name: 'Trần Thị B',
+        age: 52,
+        gender: 'Nữ',
+        patientCode: 'PT002'
+      },
       detailedBiomarkers: [
-        { name: 'Total Cholesterol', values: [280, 250, 185, 190, 195, 220, 240, 175], normal: '<200', unit: 'mg/dL' },
-        { name: 'LDL', values: [180, 160, 95, 100, 105, 140, 150, 85], normal: '<100', unit: 'mg/dL' },
-        { name: 'HDL', values: [35, 38, 55, 52, 58, 42, 40, 60], normal: '>40', unit: 'mg/dL' },
-        { name: 'Triglycerides', values: [250, 220, 120, 130, 140, 180, 200, 110], normal: '<150', unit: 'mg/dL' }
+        { name: 'Total Cholesterol', values: [280], normal: '<200', unit: 'mg/dL', assessment: 'Tăng' },
+        { name: 'LDL', values: [180], normal: '<100', unit: 'mg/dL', assessment: 'Tăng' },
+        { name: 'HDL', values: [35], normal: '>40', unit: 'mg/dL', assessment: 'Giảm' },
+        { name: 'Triglycerides', values: [250], normal: '<150', unit: 'mg/dL', assessment: 'Tăng' }
       ],
-      patientCodes: ['PT016', 'PT017', 'PT018', 'PT019', 'PT020', 'PT021', 'PT022', 'PT023']
+      patientCodes: ['PT002']
     }
   ]);
 
@@ -125,11 +138,15 @@ export const GentisTestManagement = () => {
   const handleCreateTestFromManual = (formData: FormData) => {
     const testName = formData.get('testName') as string;
     const description = formData.get('description') as string;
+    const patientName = formData.get('patientName') as string;
+    const patientAge = formData.get('patientAge') as string;
+    const patientGender = formData.get('patientGender') as string;
+    const patientCode = formData.get('patientCode') as string;
     
-    if (!testName) {
+    if (!testName || !patientName || !patientCode) {
       toast({
         title: "Lỗi",
-        description: "Vui lòng nhập tên xét nghiệm",
+        description: "Vui lòng nhập đầy đủ thông tin bắt buộc",
         variant: "destructive"
       });
       return;
@@ -148,6 +165,12 @@ export const GentisTestManagement = () => {
       riskSamples: 0,
       processingTime: '0m',
       suggestedDiseases: [],
+      patientInfo: {
+        name: patientName,
+        age: parseInt(patientAge) || 0,
+        gender: patientGender,
+        patientCode: patientCode
+      },
       detailedBiomarkers: filledData.map(item => ({
         name: item.name || `Chỉ số ${item.id}`,
         values: [item.result || 'N/A'],
@@ -155,7 +178,7 @@ export const GentisTestManagement = () => {
         unit: '',
         assessment: item.assessment || 'Chưa đánh giá'
       })),
-      patientCodes: ['PT_NEW_001']
+      patientCodes: [patientCode]
     };
 
     setTests(prev => [...prev, newTest]);
@@ -163,12 +186,13 @@ export const GentisTestManagement = () => {
     console.log('Tạo xét nghiệm mới từ dữ liệu nhập tay:', {
       name: testName,
       description: description,
+      patientInfo: { name: patientName, age: patientAge, gender: patientGender, code: patientCode },
       data: filledData
     });
     
     toast({
       title: "Xét nghiệm đã được tạo",
-      description: `Xét nghiệm "${testName}" đã được tạo với ${filledData.length} chỉ số`,
+      description: `Xét nghiệm "${testName}" cho bệnh nhân ${patientName} đã được tạo với ${filledData.length} chỉ số`,
     });
     
     // Reset manual data
@@ -194,25 +218,19 @@ export const GentisTestManagement = () => {
       `Trạng thái,${test.status === 'completed' ? 'Hoàn thành' : 'Đang xử lý'}`,
       `Thời gian xử lý,${test.processingTime}`,
       '',
+      'Thông tin bệnh nhân',
+      `Họ tên,${test.patientInfo?.name || 'N/A'}`,
+      `Tuổi,${test.patientInfo?.age || 'N/A'}`,
+      `Giới tính,${test.patientInfo?.gender || 'N/A'}`,
+      `Mã bệnh nhân,${test.patientInfo?.patientCode || 'N/A'}`,
+      '',
       'Kết quả chi tiết theo chỉ số',
-      `Chỉ số,${test.patientCodes.join(',')}`,
-      `Khoảng tham chiếu,${test.detailedBiomarkers[0]?.normal || 'N/A'}`,
-      `Nhận định,${test.detailedBiomarkers[0]?.values.map((_, i) => {
-        const patientCode = test.patientCodes[i];
-        const riskSample = test.riskSamples > 0 && ['PT001', 'PT003', 'PT007'].includes(patientCode);
-        return riskSample ? 'Tăng' : 'Bình thường';
-      }).join(',')}`
+      'Chỉ số,Kết quả,Khoảng tham chiếu,Nhận định'
     ];
 
     test.detailedBiomarkers.forEach((biomarker: any) => {
-      csvLines.push(`${biomarker.name} (${biomarker.unit}),${biomarker.values.join(',')}`);
+      csvLines.push(`${biomarker.name} (${biomarker.unit}),${biomarker.values[0]},${biomarker.normal},${biomarker.assessment}`);
     });
-
-    csvLines.push('', 'Thông tin bệnh nhân');
-    csvLines.push(`Họ tên,${test.patientCodes.map((code: string) => `Bệnh nhân ${code}`).join(',')}`);
-    csvLines.push(`Tuổi,${test.patientCodes.map(() => Math.floor(Math.random() * 40) + 30).join(',')}`);
-    csvLines.push(`Giới tính,${test.patientCodes.map(() => Math.random() > 0.5 ? 'Nam' : 'Nữ').join(',')}`);
-    csvLines.push(`Mã bệnh nhân,${test.patientCodes.join(',')}`);
 
     const csvContent = csvLines.join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
@@ -241,6 +259,19 @@ export const GentisTestManagement = () => {
         return <Badge variant="secondary">Chờ xử lý</Badge>;
       default:
         return <Badge variant="secondary">Không xác định</Badge>;
+    }
+  };
+
+  const getAssessmentBadge = (assessment: string) => {
+    switch (assessment) {
+      case 'Tăng':
+        return <Badge variant="destructive" className="text-xs">Tăng</Badge>;
+      case 'Giảm':
+        return <Badge variant="destructive" className="text-xs">Giảm</Badge>;
+      case 'Trong ngưỡng':
+        return <Badge variant="secondary" className="text-xs">Trong ngưỡng</Badge>;
+      default:
+        return <Badge variant="outline" className="text-xs">{assessment}</Badge>;
     }
   };
 
@@ -332,17 +363,41 @@ export const GentisTestManagement = () => {
                     e.preventDefault();
                     handleCreateTestFromManual(new FormData(e.currentTarget));
                   }} className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Tên xét nghiệm</label>
-                      <Input name="testName" placeholder="Nhập tên xét nghiệm" required />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Tên xét nghiệm *</label>
+                        <Input name="testName" placeholder="Nhập tên xét nghiệm" required />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Mô tả</label>
+                        <Input name="description" placeholder="Mô tả chi tiết về xét nghiệm" />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Mô tả</label>
-                      <textarea 
-                        name="description"
-                        className="w-full p-2 border border-slate-300 rounded-md h-20"
-                        placeholder="Mô tả chi tiết về xét nghiệm"
-                      />
+                    
+                    <div className="border rounded-lg p-4 bg-slate-50">
+                      <h3 className="font-medium mb-3">Thông tin bệnh nhân</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Họ tên bệnh nhân *</label>
+                          <Input name="patientName" placeholder="Nhập họ tên" required />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Mã bệnh nhân *</label>
+                          <Input name="patientCode" placeholder="VD: PT001" required />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Tuổi</label>
+                          <Input name="patientAge" type="number" placeholder="Nhập tuổi" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Giới tính</label>
+                          <select name="patientGender" className="w-full p-2 border border-slate-300 rounded-md">
+                            <option value="">Chọn giới tính</option>
+                            <option value="Nam">Nam</option>
+                            <option value="Nữ">Nữ</option>
+                          </select>
+                        </div>
+                      </div>
                     </div>
                     
                     <div className="border rounded-lg p-4">
@@ -387,12 +442,16 @@ export const GentisTestManagement = () => {
                                   />
                                 </TableCell>
                                 <TableCell>
-                                  <Input
+                                  <select
                                     value={item.assessment}
                                     onChange={(e) => updateManualTestData(item.id, 'assessment', e.target.value)}
-                                    placeholder="Bình thường/Cao/Thấp"
-                                    className="text-sm"
-                                  />
+                                    className="w-full p-1 border border-slate-300 rounded text-sm"
+                                  >
+                                    <option value="">Chọn nhận định</option>
+                                    <option value="Tăng">Tăng</option>
+                                    <option value="Giảm">Giảm</option>
+                                    <option value="Trong ngưỡng">Trong ngưỡng</option>
+                                  </select>
                                 </TableCell>
                               </TableRow>
                             ))}
@@ -438,6 +497,11 @@ export const GentisTestManagement = () => {
                     <div>
                       <CardTitle className="text-lg">{test.code}</CardTitle>
                       <p className="text-sm text-slate-600">{test.name} • {test.date}</p>
+                      {test.patientInfo && (
+                        <p className="text-sm text-blue-600 mt-1">
+                          Bệnh nhân: {test.patientInfo.name} ({test.patientInfo.patientCode}) - {test.patientInfo.age} tuổi - {test.patientInfo.gender}
+                        </p>
+                      )}
                     </div>
                     <div className="flex items-center space-x-2">
                       {getStatusBadge(test.status)}
@@ -472,46 +536,28 @@ export const GentisTestManagement = () => {
                             <TableHead className="min-w-[100px]">Kết quả</TableHead>
                             <TableHead className="min-w-[120px]">Khoảng tham chiếu</TableHead>
                             <TableHead className="min-w-[100px]">Nhận định</TableHead>
-                            {test.patientCodes.slice(0, 6).map((code, index) => (
-                              <TableHead key={index} className="min-w-[80px] text-center">
-                                {code}
-                              </TableHead>
-                            ))}
-                            {test.samples > 6 && (
-                              <TableHead className="min-w-[60px] text-center">...</TableHead>
-                            )}
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {test.detailedBiomarkers.map((biomarker, bioIndex) => (
                             <TableRow key={bioIndex}>
-                              <TableCell className="font-medium">{biomarker.name}</TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className="text-xs">
-                                  {biomarker.unit}
-                                </Badge>
+                              <TableCell className="font-medium">
+                                {biomarker.name}
+                                {biomarker.unit && (
+                                  <Badge variant="outline" className="text-xs ml-2">
+                                    {biomarker.unit}
+                                  </Badge>
+                                )}
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                {biomarker.values[0]}
                               </TableCell>
                               <TableCell className="text-sm text-slate-600">
                                 {biomarker.normal}
                               </TableCell>
                               <TableCell>
-                                <Badge variant={test.riskSamples > 0 ? "destructive" : "secondary"} className="text-xs">
-                                  {(biomarker as any).assessment || (test.riskSamples > 0 ? "Có bất thường" : "Bình thường")}
-                                </Badge>
+                                {getAssessmentBadge(biomarker.assessment)}
                               </TableCell>
-                              {biomarker.values.slice(0, 6).map((value, valIndex) => {
-                                const isAbnormal = test.riskSamples > 0 && ['PT001', 'PT003', 'PT007'].includes(test.patientCodes[valIndex]);
-                                return (
-                                  <TableCell key={valIndex} className={`text-center text-sm ${
-                                    isAbnormal ? 'text-red-600 font-medium' : 'text-slate-700'
-                                  }`}>
-                                    {value}
-                                  </TableCell>
-                                );
-                              })}
-                              {test.samples > 6 && (
-                                <TableCell className="text-center text-slate-400">...</TableCell>
-                              )}
                             </TableRow>
                           ))}
                         </TableBody>
