@@ -8,10 +8,58 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Search, Upload, FileText, AlertTriangle, Download } from 'lucide-react';
 
-export const TestManagement = () => {
+interface TestManagementProps {
+  userRole?: string;
+}
+
+export const TestManagement = ({ userRole }: TestManagementProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [tests] = useState([
+  const isCollaborator = userRole === 'collaborator';
+  
+  // Dữ liệu xét nghiệm cho bác sĩ cộng tác (chỉ bệnh nhân được phân công)
+  const collaboratorTests = [
+    {
+      id: 4,
+      code: 'XN_240101_004',
+      name: 'Sinh hóa máu - BN được phân công',
+      date: '2024-01-16',
+      samples: 3,
+      status: 'completed',
+      riskSamples: 1,
+      processingTime: '1h 20m',
+      suggestedDiseases: ['Gan nhiễm mỡ'],
+      assignedPatients: ['PT003', 'PT007', 'PT012'],
+      detailedResults: {
+        averageALT: 75,
+        averageAST: 68,
+        abnormalSamples: [
+          { patientId: 'PT003', alt: 85, ast: 72, risk: 'high' }
+        ]
+      }
+    },
+    {
+      id: 5,
+      code: 'XN_240101_005',
+      name: 'Lipid profile - BN được phân công',
+      date: '2024-01-15',
+      samples: 2,
+      status: 'processing',
+      riskSamples: 0,
+      processingTime: '45m',
+      suggestedDiseases: [],
+      assignedPatients: ['PT015', 'PT018'],
+      detailedResults: {
+        averageTotalCholesterol: 195,
+        averageLDL: 125,
+        averageHDL: 48,
+        abnormalSamples: []
+      }
+    }
+  ];
+
+  // Dữ liệu xét nghiệm cho bác sĩ chính
+  const doctorTests = [
     {
       id: 1,
       code: 'XN_240101_001',
@@ -73,7 +121,9 @@ export const TestManagement = () => {
         ]
       }
     }
-  ]);
+  ];
+
+  const [tests] = useState(isCollaborator ? collaboratorTests : doctorTests);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -128,6 +178,7 @@ Ngày thực hiện: ${test.date}
 Số mẫu xét nghiệm: ${test.samples}
 Thời gian xử lý: ${test.processingTime}
 Trạng thái: ${test.status === 'completed' ? 'Hoàn thành' : 'Đang xử lý'}
+${isCollaborator && (test as any).assignedPatients ? `Bệnh nhân được phân công: ${(test as any).assignedPatients.join(', ')}` : ''}
 
 KẾT QUẢ TỔNG QUAN:
 - Số mẫu có nguy cơ cao: ${test.riskSamples}
@@ -135,38 +186,40 @@ KẾT QUẢ TỔNG QUAN:
 - Số mẫu bình thường: ${test.samples - test.riskSamples}
 
 CÁC BỆNH ĐƯỢC GỢI Ý:
-${test.suggestedDiseases.map((disease, index) => `${index + 1}. ${disease}`).join('\n')}
+${test.suggestedDiseases.length > 0 ? test.suggestedDiseases.map((disease, index) => `${index + 1}. ${disease}`).join('\n') : 'Không có bệnh được phát hiện'}
 
 CHI TIẾT KẾT QUẢ XÉT NGHIỆM:
-${test.name === 'Sinh hóa máu tổng quát' ? `
-- Glucose trung bình: ${test.detailedResults.averageGlucose} mg/dL
-- Cholesterol trung bình: ${test.detailedResults.averageCholesterol} mg/dL
+${test.name.includes('Sinh hóa máu') ? `
+${isCollaborator ? `- ALT trung bình: ${test.detailedResults.averageALT} U/L
+- AST trung bình: ${test.detailedResults.averageAST} U/L` : `- Glucose trung bình: ${test.detailedResults.averageGlucose} mg/dL
+- Cholesterol trung bình: ${test.detailedResults.averageCholesterol} mg/dL`}
 
 DANH SÁCH MẪU BẤT THƯỜNG:
-${test.detailedResults.abnormalSamples.map((sample, index) => 
+${test.detailedResults.abnormalSamples.length > 0 ? test.detailedResults.abnormalSamples.map((sample: any, index: number) => 
   `${index + 1}. Mã BN: ${sample.patientId}
-     - Glucose: ${sample.glucose} mg/dL
-     - Cholesterol: ${sample.cholesterol} mg/dL
+     ${isCollaborator ? `- ALT: ${sample.alt} U/L
+     - AST: ${sample.ast} U/L` : `- Glucose: ${sample.glucose} mg/dL
+     - Cholesterol: ${sample.cholesterol} mg/dL`}
      - Mức độ nguy cơ: ${sample.risk === 'high' ? 'Cao' : 'Trung bình'}`
-).join('\n')}` : 
+).join('\n') : 'Không có mẫu bất thường'}` : 
 test.name === 'Lipid profile' ? `
 - Total Cholesterol trung bình: ${test.detailedResults.averageTotalCholesterol} mg/dL
 - LDL trung bình: ${test.detailedResults.averageLDL} mg/dL
 - HDL trung bình: ${test.detailedResults.averageHDL} mg/dL
 
 DANH SÁCH MẪU BẤT THƯỜNG:
-${test.detailedResults.abnormalSamples.map((sample, index) => 
+${test.detailedResults.abnormalSamples.length > 0 ? test.detailedResults.abnormalSamples.map((sample: any, index: number) => 
   `${index + 1}. Mã BN: ${sample.patientId}
      - Total Cholesterol: ${sample.totalChol} mg/dL
      - LDL: ${sample.ldl} mg/dL
      - HDL: ${sample.hdl} mg/dL
      - Mức độ nguy cơ: ${sample.risk === 'high' ? 'Cao' : 'Trung bình'}`
-).join('\n')}` : `
+).join('\n') : 'Không có mẫu bất thường'}` : `
 - HbA1c trung bình: ${test.detailedResults.averageHbA1c}%
 - Glucose trung bình: ${test.detailedResults.averageGlucose} mg/dL
 
 DANH SÁCH MẪU BẤT THƯỜNG:
-${test.detailedResults.abnormalSamples.map((sample, index) => 
+${test.detailedResults.abnormalSamples.map((sample: any, index: number) => 
   `${index + 1}. Mã BN: ${sample.patientId}
      - HbA1c: ${sample.hba1c}%
      - Glucose: ${sample.glucose} mg/dL
@@ -177,11 +230,12 @@ KHUYẾN NGHỊ:
 - Theo dõi chặt chẽ các bệnh nhân có nguy cơ cao
 - Tư vấn thay đổi lối sống cho bệnh nhân
 - Xem xét các xét nghiệm bổ sung nếu cần thiết
+${isCollaborator ? '- Liên hệ bác sĩ chính để tư vấn thêm nếu cần thiết' : ''}
 
 ============================
 Báo cáo được tạo bởi SLSS Gentis
 Ngày tạo: ${new Date().toLocaleString('vi-VN')}
-Bác sĩ phụ trách: [Tên bác sĩ]
+Bác sĩ phụ trách: ${isCollaborator ? 'Bác sĩ cộng tác' : 'Bác sĩ chính'}
       `;
 
       const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
@@ -219,73 +273,77 @@ Bác sĩ phụ trách: [Tên bác sĩ]
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-slate-800">Quản lý xét nghiệm</h2>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Tạo xét nghiệm mới
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Tạo xét nghiệm mới</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              handleCreateTest(new FormData(e.currentTarget));
-            }} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Tên xét nghiệm</label>
-                <Input name="testName" placeholder="Nhập tên xét nghiệm" required />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Mô tả</label>
-                <textarea 
-                  name="description"
-                  className="w-full p-2 border border-slate-300 rounded-md h-20"
-                  placeholder="Mô tả chi tiết về xét nghiệm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">File dữ liệu xét nghiệm</label>
-                <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center">
-                  <Upload className="h-8 w-8 text-slate-400 mx-auto mb-2" />
-                  <p className="text-sm text-slate-600 mb-2">Kéo thả file hoặc click để chọn</p>
-                  <p className="text-xs text-slate-500 mb-2">Hỗ trợ: CSV, Excel (nhiều mẫu)</p>
-                  <input
-                    type="file"
-                    accept=".csv,.xlsx,.xls"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    id="file-upload"
-                  />
-                  <Button 
-                    type="button" 
-                    size="sm" 
-                    onClick={() => document.getElementById('file-upload')?.click()}
-                  >
-                    Chọn file
-                  </Button>
-                  {uploadedFile && (
-                    <div className="mt-2 p-2 bg-green-50 rounded">
-                      <p className="text-sm text-green-800">
-                        ✓ Đã chọn: {uploadedFile.name} ({(uploadedFile.size / 1024).toFixed(1)} KB)
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <Button 
-                type="submit" 
-                className="w-full bg-blue-600 hover:bg-blue-700"
-                disabled={!uploadedFile}
-              >
-                Tạo và xử lý xét nghiệm
+        <h2 className="text-2xl font-bold text-slate-800">
+          {isCollaborator ? 'Quản lý xét nghiệm - Bệnh nhân được phân công' : 'Quản lý xét nghiệm'}
+        </h2>
+        {!isCollaborator && (
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="h-4 w-4 mr-2" />
+                Tạo xét nghiệm mới
               </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Tạo xét nghiệm mới</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                handleCreateTest(new FormData(e.currentTarget));
+              }} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Tên xét nghiệm</label>
+                  <Input name="testName" placeholder="Nhập tên xét nghiệm" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Mô tả</label>
+                  <textarea 
+                    name="description"
+                    className="w-full p-2 border border-slate-300 rounded-md h-20"
+                    placeholder="Mô tả chi tiết về xét nghiệm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">File dữ liệu xét nghiệm</label>
+                  <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center">
+                    <Upload className="h-8 w-8 text-slate-400 mx-auto mb-2" />
+                    <p className="text-sm text-slate-600 mb-2">Kéo thả file hoặc click để chọn</p>
+                    <p className="text-xs text-slate-500 mb-2">Hỗ trợ: CSV, Excel (nhiều mẫu)</p>
+                    <input
+                      type="file"
+                      accept=".csv,.xlsx,.xls"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      id="file-upload"
+                    />
+                    <Button 
+                      type="button" 
+                      size="sm" 
+                      onClick={() => document.getElementById('file-upload')?.click()}
+                    >
+                      Chọn file
+                    </Button>
+                    {uploadedFile && (
+                      <div className="mt-2 p-2 bg-green-50 rounded">
+                        <p className="text-sm text-green-800">
+                          ✓ Đã chọn: {uploadedFile.name} ({(uploadedFile.size / 1024).toFixed(1)} KB)
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <Button 
+                  type="submit" 
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  disabled={!uploadedFile}
+                >
+                  Tạo và xử lý xét nghiệm
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       <Card>
@@ -313,6 +371,7 @@ Bác sĩ phụ trách: [Tên bác sĩ]
                 <TableHead>Trạng thái</TableHead>
                 <TableHead>Mẫu nguy cơ cao</TableHead>
                 <TableHead>Thời gian xử lý</TableHead>
+                {isCollaborator && <TableHead>BN được phân công</TableHead>}
                 <TableHead className="text-right">Thao tác</TableHead>
               </TableRow>
             </TableHeader>
@@ -335,6 +394,13 @@ Bác sĩ phụ trách: [Tên bác sĩ]
                     )}
                   </TableCell>
                   <TableCell>{test.processingTime}</TableCell>
+                  {isCollaborator && (
+                    <TableCell>
+                      <div className="text-xs">
+                        {(test as any).assignedPatients?.join(', ') || 'N/A'}
+                      </div>
+                    </TableCell>
+                  )}
                   <TableCell className="text-right">
                     <div className="flex space-x-2 justify-end">
                       <Button 

@@ -65,6 +65,10 @@ const DoctorSidebar = ({ activeTab, setActiveTab, userRole }: {
   setActiveTab: (tab: string) => void;
   userRole: string;
 }) => {
+  const filteredMenuItems = userRole === 'collaborator' 
+    ? menuItems.filter(item => ['patients', 'tests', 'diseases', 'profile'].includes(item.id))
+    : menuItems;
+
   return (
     <Sidebar className="w-64">
       <SidebarContent>
@@ -75,15 +79,12 @@ const DoctorSidebar = ({ activeTab, setActiveTab, userRole }: {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {filteredMenuItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
                     isActive={activeTab === item.id}
                     onClick={() => setActiveTab(item.id)}
                     className="w-full justify-start"
-                    disabled={
-                      (item.id === 'tests' || item.id === 'batch') && userRole === 'collaborator'
-                    }
                   >
                     <item.icon className="h-4 w-4 mr-3" />
                     <span>{item.label}</span>
@@ -106,15 +107,15 @@ export const DoctorDashboard = ({ user, onLogout }: DoctorDashboardProps) => {
       case 'patients':
         return <PatientManagement userRole={user.role} />;
       case 'tests':
+        return <TestManagement userRole={user.role} />;
+      case 'analysis':
         return user.role !== 'collaborator' ? (
-          <TestManagement />
+          <TestAnalysis userRole={user.role} />
         ) : (
           <div className="text-center py-12">
             <p className="text-slate-600">Bác sĩ cộng tác không có quyền truy cập chức năng này</p>
           </div>
         );
-      case 'analysis':
-        return <TestAnalysis userRole={user.role} />;
       case 'batch':
         return user.role !== 'collaborator' ? (
           <DataAnalysis />
@@ -147,7 +148,7 @@ export const DoctorDashboard = ({ user, onLogout }: DoctorDashboardProps) => {
               <div className="flex items-center">
                 <SidebarTrigger className="mr-4" />
                 <h1 className="text-2xl font-bold text-slate-800">
-                  Chào mừng, {user.name} ({user.role})
+                  Chào mừng, {user.name} ({user.role === 'collaborator' ? 'Bác sĩ cộng tác' : user.role === 'doctor' ? 'Bác sĩ' : 'Quản trị viên'})
                 </h1>
               </div>
               <DropdownMenu>
