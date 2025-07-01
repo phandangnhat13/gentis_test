@@ -8,17 +8,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { BIOMARKER_LIST } from '@/data/biomarkers';
 
 export const GentisTestManagement = () => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isManualInputOpen, setIsManualInputOpen] = useState(false);
-  const [manualTestData, setManualTestData] = useState(Array(77).fill(null).map((_, index) => ({
-    index: index + 1,
-    name: '',
-    result: '',
-    reference: '',
-    assessment: ''
-  })));
+  const [manualTestData, setManualTestData] = useState(
+    BIOMARKER_LIST.map((biomarker, index) => ({
+      index: index + 1,
+      name: biomarker.name,
+      result: '',
+      reference: '',
+      assessment: ''
+    }))
+  );
   const { toast } = useToast();
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -68,7 +71,7 @@ export const GentisTestManagement = () => {
     
     // Get filled biomarkers
     const filledBiomarkers = manualTestData.filter(item => 
-      item.name.trim() || item.result.trim() || item.reference.trim() || item.assessment.trim()
+      item.result.trim() || item.reference.trim() || item.assessment.trim()
     );
 
     if (!testName || !patientName || filledBiomarkers.length === 0) {
@@ -94,13 +97,15 @@ export const GentisTestManagement = () => {
 
     setIsManualInputOpen(false);
     // Reset form
-    setManualTestData(Array(77).fill(null).map((_, index) => ({
-      index: index + 1,
-      name: '',
-      result: '',
-      reference: '',
-      assessment: ''
-    })));
+    setManualTestData(
+      BIOMARKER_LIST.map((biomarker, index) => ({
+        index: index + 1,
+        name: biomarker.name,
+        result: '',
+        reference: '',
+        assessment: ''
+      }))
+    );
   };
 
   return (
@@ -266,12 +271,7 @@ export const GentisTestManagement = () => {
                                 <span className="text-sm text-slate-600">{item.index}</span>
                               </td>
                               <td className="p-2">
-                                <Input
-                                  value={item.name}
-                                  onChange={(e) => handleManualDataChange(index, 'name', e.target.value)}
-                                  placeholder="Tên chỉ số"
-                                  className="h-8"
-                                />
+                                <span className="text-sm font-medium">{item.name}</span>
                               </td>
                               <td className="p-2">
                                 <Input

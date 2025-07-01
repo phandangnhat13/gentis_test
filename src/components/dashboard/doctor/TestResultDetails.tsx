@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Textarea } from '@/components/ui/textarea';
 import { Download, FileText, Calendar, User, Phone, MapPin, Activity, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { BIOMARKER_LIST, generateDefaultBiomarkers } from '@/data/biomarkers';
 
 interface TestResultDetailsProps {
   testResult: {
@@ -36,25 +37,35 @@ export const TestResultDetails = ({ testResult, userRole }: TestResultDetailsPro
   const { toast } = useToast();
   const isCollaborator = userRole === 'collaborator';
 
-  // Mock disease data
+  // Mock disease data matching your disease list
   const diseaseInfo = {
     D001: {
-      name: 'Tiểu đường type 2',
-      description: 'Bệnh tiểu đường type 2 là một rối loạn chuyển hóa mãn tính...',
-      symptoms: ['Khát nước nhiều', 'Tiểu nhiều', 'Mệt mỏi', 'Sụt cân'],
-      diagnosis: 'Dựa vào xét nghiệm glucose máu đói, HbA1c...',
-      treatment: 'Điều chỉnh chế độ ăn uống, tập thể dục, dùng thuốc...',
-      summary: 'Bệnh tiểu đường type 2 gây ra do tế bào kháng insulin hoặc tuyến tụy không sản xuất đủ insulin.'
+      name: 'Isovaleric acidemia (isovaleryl-CoA dehydrogenase)',
+      description: 'Rối loạn chuyển hóa axit amin do thiếu hụt enzyme isovaleryl-CoA dehydrogenase, dẫn đến tích tụ axit isovaleric.',
+      symptoms: ['Mùi chân đặc trưng', 'Nôn mửa', 'Hôn mê', 'Chậm phát triển'],
+      diagnosis: 'Xét nghiệm tandem mass spectrometry, phát hiện tăng C5 (isovalerylcarnitine)',
+      treatment: 'Chế độ ăn hạn chế leucine, bổ sung glycine và carnitine',
+      summary: 'Bệnh chuyển hóa hiếm gặp do thiếu enzyme isovaleryl-CoA dehydrogenase, có thể gây nguy hiểm tính mạng nếu không điều trị.'
     },
     D002: {
-      name: 'Rối loạn lipid máu',
-      description: 'Rối loạn lipid máu là tình trạng bất thường trong nồng độ lipid...',
-      symptoms: ['Thường không có triệu chứng', 'Có thể đau ngực'],
-      diagnosis: 'Xét nghiệm lipid máu, cholesterol total, LDL, HDL...',
-      treatment: 'Thay đổi lối sống, thuốc hạ lipid máu...',
-      summary: 'Rối loạn lipid máu tăng nguy cơ bệnh tim mạch, cần kiểm soát chế độ ăn và dùng thuốc.'
+      name: 'Glutaric acidemia type I (glutaryl-CoA dehydrogenase)',
+      description: 'Rối loạn chuyển hóa do thiếu hụt enzyme glutaryl-CoA dehydrogenase, gây tích tụ axit glutaric.',
+      symptoms: ['Đầu to', 'Chậm phát triển vận động', 'Rối loạn thần kinh', 'Co giật'],
+      diagnosis: 'Xét nghiệm tandem MS, tăng glutarylcarnitine, phân tích nước tiểu',
+      treatment: 'Chế độ ăn hạn chế lysine và tryptophan, bổ sung carnitine và riboflavin',
+      summary: 'Bệnh chuyển hóa ảnh hưởng đến não bộ, cần chẩn đoán và điều trị sớm để tránh tổn thương não vĩnh viễn.'
     }
   };
+
+  // Generate full biomarker data with your 77 biomarkers
+  const fullBiomarkers = generateDefaultBiomarkers();
+  
+  // Merge with existing data
+  Object.keys(testResult.biomarkers).forEach(key => {
+    if (fullBiomarkers[key]) {
+      fullBiomarkers[key] = testResult.biomarkers[key];
+    }
+  });
 
   const handleSaveConclusion = () => {
     toast({
@@ -89,11 +100,13 @@ export const TestResultDetails = ({ testResult, userRole }: TestResultDetailsPro
       - Kết quả: ${testResult.result === 'positive' ? 'Dương tính' : 'Âm tính'}
       - Chẩn đoán: ${testResult.diagnosis}
       
-      CHỈ SỐ SINH HỌC CHI TIẾT:
-      ${Object.entries(testResult.biomarkers).map(([key, marker]: [string, any]) => 
-        `- ${key.toUpperCase()}: ${marker.value} (Khoảng bình thường: ${marker.normal})
-          Nhận định: ${marker.status === 'high' ? 'Tăng' : marker.status === 'low' ? 'Giảm' : 'Trong ngưỡng'}`
-      ).join('\n      ')}
+      CHỈ SỐ SINH HỌC CHI TIẾT (77 CHỈ SỐ):
+      ${BIOMARKER_LIST.map(biomarker => {
+        const key = biomarker.code.toLowerCase();
+        const marker = fullBiomarkers[key];
+        return `- ${biomarker.name}: ${marker.value} (Khoảng bình thường: ${marker.normal})
+          Nhận định: ${marker.status === 'high' ? 'Tăng' : marker.status === 'low' ? 'Giảm' : 'Trong ngưỡng'}`;
+      }).join('\n      ')}
       
       KẾT LUẬN BÁC SĨ:
       ${testResult.doctorConclusion || 'Chưa có kết luận từ bác sĩ'}
@@ -244,37 +257,45 @@ export const TestResultDetails = ({ testResult, userRole }: TestResultDetailsPro
             </div>
           </div>
 
-          {/* Biomarkers Table */}
+          {/* All 77 Biomarkers Table */}
           <div>
-            <h4 className="font-medium mb-3">Chi tiết chỉ số sinh học:</h4>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Chỉ số</TableHead>
-                  <TableHead>Kết quả</TableHead>
-                  <TableHead>Khoảng tham chiếu</TableHead>
-                  <TableHead>Nhận định</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {Object.entries(testResult.biomarkers).map(([key, marker]: [string, any]) => (
-                  <TableRow key={key}>
-                    <TableCell className="font-medium">{key.toUpperCase()}</TableCell>
-                    <TableCell className="font-semibold">{marker.value}</TableCell>
-                    <TableCell className="text-slate-600">{marker.normal}</TableCell>
-                    <TableCell>
-                      <Badge variant={
-                        marker.status === 'high' ? "destructive" : 
-                        marker.status === 'low' ? "secondary" : "outline"
-                      }>
-                        {marker.status === 'high' ? 'Tăng' : 
-                         marker.status === 'low' ? 'Giảm' : 'Trong ngưỡng'}
-                      </Badge>
-                    </TableCell>
+            <h4 className="font-medium mb-3">Chi tiết 77 chỉ số sinh học:</h4>
+            <div className="max-h-96 overflow-y-auto border rounded-lg">
+              <Table>
+                <TableHeader className="sticky top-0 bg-white">
+                  <TableRow>
+                    <TableHead>STT</TableHead>
+                    <TableHead>Chỉ số</TableHead>
+                    <TableHead>Kết quả</TableHead>
+                    <TableHead>Khoảng tham chiếu</TableHead>
+                    <TableHead>Nhận định</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {BIOMARKER_LIST.map((biomarker, index) => {
+                    const key = biomarker.code.toLowerCase();
+                    const marker = fullBiomarkers[key];
+                    return (
+                      <TableRow key={biomarker.id}>
+                        <TableCell className="text-sm text-slate-600">{index + 1}</TableCell>
+                        <TableCell className="font-medium text-sm">{biomarker.name}</TableCell>
+                        <TableCell className="font-semibold">{marker.value || '--'}</TableCell>
+                        <TableCell className="text-slate-600 text-sm">{marker.normal}</TableCell>
+                        <TableCell>
+                          <Badge variant={
+                            marker.status === 'high' ? "destructive" : 
+                            marker.status === 'low' ? "secondary" : "outline"
+                          }>
+                            {marker.status === 'high' ? 'Tăng' : 
+                             marker.status === 'low' ? 'Giảm' : 'Trong ngưỡng'}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           </div>
 
           {/* Doctor's Conclusion */}
