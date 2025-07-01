@@ -6,12 +6,26 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Search, Upload, FileText, AlertTriangle, Download, FileSpreadsheet, BarChart3 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, Search, Upload, FileText, AlertTriangle, Download, FileSpreadsheet, BarChart3, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+
+const defaultBiomarkers = [
+  'Glucose', 'HbA1c', 'Total Cholesterol', 'LDL', 'HDL', 'Triglycerides', 'ALT', 'AST', 'Creatinine', 'BUN',
+  'Sodium', 'Potassium', 'Chloride', 'CO2', 'Hemoglobin', 'Hematocrit', 'WBC', 'RBC', 'Platelets', 'TSH',
+  'T3', 'T4', 'Insulin', 'C-Peptide', 'Cortisol', 'Testosterone', 'Estradiol', 'Progesterone', 'PSA', 'AFP',
+  'CEA', 'CA 19-9', 'CA 125', 'Ferritin', 'Transferrin', 'Iron', 'TIBC', 'Vitamin D', 'Vitamin B12', 'Folate',
+  'Magnesium', 'Phosphorus', 'Calcium', 'Albumin', 'Total Protein', 'Bilirubin Total', 'Bilirubin Direct', 'ALP',
+  'GGT', 'Amylase', 'Lipase', 'CK', 'LDH', 'Troponin', 'BNP', 'CRP', 'ESR', 'Prothrombin Time', 'PTT',
+  'INR', 'Fibrinogen', 'D-Dimer', 'Homocysteine', 'Uric Acid', 'Lactate', 'Ketones', 'Microalbumin', 'Protein (Urine)',
+  'Glucose (Urine)', 'Specific Gravity', 'pH (Urine)', 'Nitrites', 'Leukocyte Esterase', 'Blood (Urine)', 'Bacteria', 'Epithelial Cells',
+  'RBC (Urine)', 'WBC (Urine)', 'Casts', 'Crystals', 'Mucus', 'Yeast', 'Parasites', 'Other'
+];
 
 export const GentisTestManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [manualTestData, setManualTestData] = useState<any[]>([]);
   const { toast } = useToast();
   
   // Enhanced test data with detailed biomarkers
@@ -55,6 +69,20 @@ export const GentisTestManagement = () => {
     }
   ]);
 
+  const initializeManualTestData = () => {
+    const data = [];
+    for (let i = 1; i <= 77; i++) {
+      data.push({
+        id: i,
+        name: defaultBiomarkers[i - 1] || `Chỉ số ${i}`,
+        result: '',
+        referenceRange: '',
+        assessment: ''
+      });
+    }
+    setManualTestData(data);
+  };
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -63,12 +91,12 @@ export const GentisTestManagement = () => {
     }
   };
 
-  const handleCreateTest = (formData: FormData) => {
+  const handleCreateTestFromFile = (formData: FormData) => {
     const testName = formData.get('testName') as string;
     const description = formData.get('description') as string;
     
     if (uploadedFile) {
-      console.log('Tạo xét nghiệm mới:', {
+      console.log('Tạo xét nghiệm mới từ file:', {
         name: testName,
         description: description,
         file: uploadedFile.name,
@@ -94,6 +122,42 @@ export const GentisTestManagement = () => {
     }
   };
 
+  const handleCreateTestFromManual = (formData: FormData) => {
+    const testName = formData.get('testName') as string;
+    const description = formData.get('description') as string;
+    
+    if (!testName) {
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng nhập tên xét nghiệm",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    console.log('Tạo xét nghiệm mới từ dữ liệu nhập tay:', {
+      name: testName,
+      description: description,
+      data: manualTestData.filter(item => item.result || item.referenceRange || item.assessment)
+    });
+    
+    toast({
+      title: "Xét nghiệm đã được tạo",
+      description: `Xét nghiệm "${testName}" đã được tạo với ${manualTestData.filter(item => item.result || item.referenceRange || item.assessment).length} chỉ số`,
+    });
+    
+    // Reset manual data
+    setManualTestData([]);
+  };
+
+  const updateManualTestData = (id: number, field: string, value: string) => {
+    setManualTestData(prev => 
+      prev.map(item => 
+        item.id === id ? { ...item, [field]: value } : item
+      )
+    );
+  };
+
   const exportDetailedReport = (test: any) => {
     // Create detailed CSV with all biomarker data
     const csvLines = [
@@ -115,7 +179,6 @@ export const GentisTestManagement = () => {
       }).join(',')}`
     ];
 
-    // Add biomarker data
     test.detailedBiomarkers.forEach((biomarker: any) => {
       csvLines.push(`${biomarker.name} (${biomarker.unit}),${biomarker.values.join(',')}`);
     });
@@ -173,63 +236,155 @@ export const GentisTestManagement = () => {
                 Tạo xét nghiệm mới
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Tạo xét nghiệm mới</DialogTitle>
               </DialogHeader>
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                handleCreateTest(new FormData(e.currentTarget));
-              }} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Tên xét nghiệm</label>
-                  <Input name="testName" placeholder="Nhập tên xét nghiệm" required />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Mô tả</label>
-                  <textarea 
-                    name="description"
-                    className="w-full p-2 border border-slate-300 rounded-md h-20"
-                    placeholder="Mô tả chi tiết về xét nghiệm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">File dữ liệu xét nghiệm</label>
-                  <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center">
-                    <Upload className="h-8 w-8 text-slate-400 mx-auto mb-2" />
-                    <p className="text-sm text-slate-600 mb-2">Kéo thả file hoặc click để chọn</p>
-                    <p className="text-xs text-slate-500 mb-2">Hỗ trợ: CSV, Excel (nhiều mẫu)</p>
-                    <input
-                      type="file"
-                      accept=".csv,.xlsx,.xls"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                      id="file-upload"
-                    />
-                    <Button 
-                      type="button" 
-                      size="sm" 
-                      onClick={() => document.getElementById('file-upload')?.click()}
-                    >
-                      Chọn file
-                    </Button>
-                    {uploadedFile && (
-                      <div className="mt-2 p-2 bg-green-50 rounded">
-                        <p className="text-sm text-green-800">
-                          ✓ Đã chọn: {uploadedFile.name} ({(uploadedFile.size / 1024).toFixed(1)} KB)
-                        </p>
+              <Tabs defaultValue="file" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="file">Tải file lên</TabsTrigger>
+                  <TabsTrigger value="manual" onClick={initializeManualTestData}>Nhập tay</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="file">
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    handleCreateTestFromFile(new FormData(e.currentTarget));
+                  }} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Tên xét nghiệm</label>
+                      <Input name="testName" placeholder="Nhập tên xét nghiệm" required />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Mô tả</label>
+                      <textarea 
+                        name="description"
+                        className="w-full p-2 border border-slate-300 rounded-md h-20"
+                        placeholder="Mô tả chi tiết về xét nghiệm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">File dữ liệu xét nghiệm</label>
+                      <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center">
+                        <Upload className="h-8 w-8 text-slate-400 mx-auto mb-2" />
+                        <p className="text-sm text-slate-600 mb-2">Kéo thả file hoặc click để chọn</p>
+                        <p className="text-xs text-slate-500 mb-2">Hỗ trợ: CSV, Excel (nhiều mẫu)</p>
+                        <input
+                          type="file"
+                          accept=".csv,.xlsx,.xls"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                          id="file-upload"
+                        />
+                        <Button 
+                          type="button" 
+                          size="sm" 
+                          onClick={() => document.getElementById('file-upload')?.click()}
+                        >
+                          Chọn file
+                        </Button>
+                        {uploadedFile && (
+                          <div className="mt-2 p-2 bg-green-50 rounded">
+                            <p className="text-sm text-green-800">
+                              ✓ Đã chọn: {uploadedFile.name} ({(uploadedFile.size / 1024).toFixed(1)} KB)
+                            </p>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </div>
-                <Button 
-                  type="submit" 
-                  className="w-full bg-blue-600 hover:bg-blue-700"
-                  disabled={!uploadedFile}
-                >
-                  Tạo và xử lý xét nghiệm
-                </Button>
-              </form>
+                    </div>
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-blue-600 hover:bg-blue-700"
+                      disabled={!uploadedFile}
+                    >
+                      Tạo và xử lý xét nghiệm
+                    </Button>
+                  </form>
+                </TabsContent>
+                
+                <TabsContent value="manual">
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    handleCreateTestFromManual(new FormData(e.currentTarget));
+                  }} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Tên xét nghiệm</label>
+                      <Input name="testName" placeholder="Nhập tên xét nghiệm" required />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Mô tả</label>
+                      <textarea 
+                        name="description"
+                        className="w-full p-2 border border-slate-300 rounded-md h-20"
+                        placeholder="Mô tả chi tiết về xét nghiệm"
+                      />
+                    </div>
+                    
+                    <div className="border rounded-lg p-4">
+                      <h3 className="font-medium mb-3">Nhập 77 chỉ số xét nghiệm</h3>
+                      <div className="max-h-96 overflow-y-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-16">STT</TableHead>
+                              <TableHead className="w-48">Tên chỉ số</TableHead>
+                              <TableHead className="w-32">Kết quả</TableHead>
+                              <TableHead className="w-40">Khoảng tham chiếu</TableHead>
+                              <TableHead>Nhận định</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {manualTestData.map((item) => (
+                              <TableRow key={item.id}>
+                                <TableCell className="font-medium">{item.id}</TableCell>
+                                <TableCell>
+                                  <Input
+                                    value={item.name}
+                                    onChange={(e) => updateManualTestData(item.id, 'name', e.target.value)}
+                                    placeholder={`Chỉ số ${item.id}`}
+                                    className="text-sm"
+                                  />
+                                </TableCell>
+                                <TableCell>
+                                  <Input
+                                    value={item.result}
+                                    onChange={(e) => updateManualTestData(item.id, 'result', e.target.value)}
+                                    placeholder="Kết quả"
+                                    className="text-sm"
+                                  />
+                                </TableCell>
+                                <TableCell>
+                                  <Input
+                                    value={item.referenceRange}
+                                    onChange={(e) => updateManualTestData(item.id, 'referenceRange', e.target.value)}
+                                    placeholder="VD: 70-100"
+                                    className="text-sm"
+                                  />
+                                </TableCell>
+                                <TableCell>
+                                  <Input
+                                    value={item.assessment}
+                                    onChange={(e) => updateManualTestData(item.id, 'assessment', e.target.value)}
+                                    placeholder="Bình thường/Cao/Thấp"
+                                    className="text-sm"
+                                  />
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-blue-600 hover:bg-blue-700"
+                    >
+                      Tạo xét nghiệm từ dữ liệu nhập tay
+                    </Button>
+                  </form>
+                </TabsContent>
+              </Tabs>
             </DialogContent>
           </Dialog>
         </div>

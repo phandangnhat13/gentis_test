@@ -5,21 +5,19 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Users, 
-  Upload, 
   FileText, 
   LogOut, 
-  Settings,
   Database,
   Activity,
   Bell,
   UserCheck,
   BarChart3,
   TrendingUp,
-  AlertTriangle
+  AlertTriangle,
+  Target
 } from 'lucide-react';
 import { UserManagement } from './admin/UserManagement';
 import { DiseaseManagement } from './admin/DiseaseManagement';
-import { DataUpload } from './admin/DataUpload';
 import { PatientAssignment } from './admin/PatientAssignment';
 
 interface AdminDashboardProps {
@@ -34,7 +32,7 @@ interface AdminDashboardProps {
 export const AdminDashboard = ({ user, onLogout }: AdminDashboardProps) => {
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Enhanced statistics data
+  // Enhanced statistics data with positive indicators
   const systemStats = {
     totalPatients: 1248,
     totalDoctors: 24,
@@ -43,10 +41,14 @@ export const AdminDashboard = ({ user, onLogout }: AdminDashboardProps) => {
     accuracy: 94.2,
     positiveResults: 312,
     negativeResults: 922,
+    positiveRate: 25.0,
+    highRiskPatients: 89,
+    mediumRiskPatients: 156,
+    lowRiskPatients: 1003,
     branches: [
-      { name: 'Chi nhánh Hà Nội', patients: 456, positive: 123, negative: 333 },
-      { name: 'Chi nhánh TP.HCM', patients: 523, positive: 142, negative: 381 },
-      { name: 'Chi nhánh Đà Nẵng', patients: 269, positive: 47, negative: 222 }
+      { name: 'Chi nhánh Hà Nội', patients: 456, positive: 123, negative: 333, positiveRate: 27.0 },
+      { name: 'Chi nhánh TP.HCM', patients: 523, positive: 142, negative: 381, positiveRate: 27.2 },
+      { name: 'Chi nhánh Đà Nẵng', patients: 269, positive: 47, negative: 222, positiveRate: 17.5 }
     ]
   };
 
@@ -112,13 +114,6 @@ export const AdminDashboard = ({ user, onLogout }: AdminDashboardProps) => {
                   <FileText className="h-4 w-4 mr-3" />
                   Quản lý bệnh
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="upload" 
-                  className="w-full justify-start data-[state=active]:bg-red-50 data-[state=active]:text-red-700"
-                >
-                  <Upload className="h-4 w-4 mr-3" />
-                  Upload dữ liệu
-                </TabsTrigger>
               </TabsList>
             </Tabs>
           </nav>
@@ -169,6 +164,50 @@ export const AdminDashboard = ({ user, onLogout }: AdminDashboardProps) => {
                     <CardContent>
                       <div className="text-2xl font-bold">{systemStats.accuracy}%</div>
                       <p className="text-xs text-muted-foreground">Gợi ý chẩn đoán</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Positive Indicators Statistics */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Tỷ lệ dương tính</CardTitle>
+                      <Target className="h-4 w-4 text-orange-500" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-orange-600">{systemStats.positiveRate}%</div>
+                      <p className="text-xs text-muted-foreground">Tỷ lệ tổng thể</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Nguy cơ cao</CardTitle>
+                      <AlertTriangle className="h-4 w-4 text-red-500" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-red-600">{systemStats.highRiskPatients}</div>
+                      <p className="text-xs text-muted-foreground">Cần theo dõi sát</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Nguy cơ trung bình</CardTitle>
+                      <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-yellow-600">{systemStats.mediumRiskPatients}</div>
+                      <p className="text-xs text-muted-foreground">Theo dõi định kỳ</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Nguy cơ thấp</CardTitle>
+                      <TrendingUp className="h-4 w-4 text-green-500" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-green-600">{systemStats.lowRiskPatients}</div>
+                      <p className="text-xs text-muted-foreground">Tình trạng ổn định</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -234,8 +273,8 @@ export const AdminDashboard = ({ user, onLogout }: AdminDashboardProps) => {
                               <div className="text-xs text-slate-600">Âm tính</div>
                             </div>
                             <div className="text-center">
-                              <div className="text-lg font-bold text-blue-600">
-                                {((branch.positive / branch.patients) * 100).toFixed(1)}%
+                              <div className="text-lg font-bold text-orange-600">
+                                {branch.positiveRate}%
                               </div>
                               <div className="text-xs text-slate-600">Tỷ lệ dương</div>
                             </div>
@@ -258,10 +297,6 @@ export const AdminDashboard = ({ user, onLogout }: AdminDashboardProps) => {
 
             <TabsContent value="diseases" className="mt-0">
               <DiseaseManagement />
-            </TabsContent>
-
-            <TabsContent value="upload" className="mt-0">
-              <DataUpload />
             </TabsContent>
           </Tabs>
         </main>

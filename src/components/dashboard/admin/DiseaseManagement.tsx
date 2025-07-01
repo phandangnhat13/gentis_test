@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, FileText, Search, Upload, Edit, Eye, Save, X } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, FileText, Search, Upload, Edit, Eye, Save, X, Filter } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Disease {
@@ -14,6 +16,7 @@ interface Disease {
   name: string;
   code: string;
   category: string;
+  classification: string;
   hasDescription: boolean;
   hasSummary: boolean;
   relatedTests: string[];
@@ -22,8 +25,22 @@ interface Disease {
   summary?: string;
 }
 
+const diseaseClassifications = [
+  'Bệnh tim mạch',
+  'Bệnh nội tiết',
+  'Bệnh chuyển hóa',
+  'Bệnh gan',
+  'Bệnh thận',
+  'Bệnh máu',
+  'Bệnh phổi',
+  'Bệnh tiêu hóa',
+  'Bệnh thần kinh',
+  'Bệnh ung thư'
+];
+
 export const DiseaseManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedClassification, setSelectedClassification] = useState('all');
   const [editingDisease, setEditingDisease] = useState<Disease | null>(null);
   const [viewingDisease, setViewingDisease] = useState<Disease | null>(null);
   const { toast } = useToast();
@@ -34,6 +51,7 @@ export const DiseaseManagement = () => {
       name: 'Tiểu đường type 2',
       code: 'E11',
       category: 'Bệnh nội tiết',
+      classification: 'Bệnh nội tiết',
       hasDescription: true,
       hasSummary: true,
       relatedTests: ['HbA1c', 'Glucose', 'Insulin'],
@@ -46,6 +64,7 @@ export const DiseaseManagement = () => {
       name: 'Tăng huyết áp',
       code: 'I10',
       category: 'Bệnh tim mạch',
+      classification: 'Bệnh tim mạch',
       hasDescription: true,
       hasSummary: false,
       relatedTests: ['Systolic BP', 'Diastolic BP'],
@@ -57,11 +76,25 @@ export const DiseaseManagement = () => {
       name: 'Rối loạn lipid máu',
       code: 'E78',
       category: 'Bệnh chuyển hóa',
+      classification: 'Bệnh chuyển hóa',
       hasDescription: false,
       hasSummary: true,
       relatedTests: ['Total Cholesterol', 'LDL', 'HDL', 'Triglycerides'],
       riskFactors: 15,
       summary: 'Rối loạn lipid máu bao gồm tăng cholesterol, LDL và giảm HDL, là yếu tố nguy cơ của bệnh tim mạch.'
+    },
+    {
+      id: 4,
+      name: 'Gan nhiễm mỡ',
+      code: 'K76.0',
+      category: 'Bệnh gan',
+      classification: 'Bệnh gan',
+      hasDescription: true,
+      hasSummary: true,
+      relatedTests: ['ALT', 'AST', 'GGT'],
+      riskFactors: 10,
+      description: 'Gan nhiễm mỡ là tình trạng tích tụ mỡ trong tế bào gan.',
+      summary: 'Bệnh gan nhiễm mỡ có thể điều trị bằng thay đổi lối sống.'
     }
   ]);
 
@@ -71,6 +104,7 @@ export const DiseaseManagement = () => {
       name: diseaseData.name || '',
       code: diseaseData.code || '',
       category: diseaseData.category || '',
+      classification: diseaseData.classification || '',
       hasDescription: false,
       hasSummary: false,
       relatedTests: [],
@@ -104,7 +138,6 @@ export const DiseaseManagement = () => {
       console.log(`File ${type} đã chọn:`, file.name, file.size, file.type);
       
       if (type === 'csv') {
-        // Simulate CSV processing
         const reader = new FileReader();
         reader.onload = (e) => {
           const content = e.target?.result as string;
@@ -125,11 +158,20 @@ export const DiseaseManagement = () => {
     }
   };
 
-  const filteredDiseases = diseases.filter(disease =>
-    disease.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    disease.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    disease.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredDiseases = diseases.filter(disease => {
+    const matchesSearch = disease.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      disease.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      disease.category.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesClassification = selectedClassification === 'all' || disease.classification === selectedClassification;
+    
+    return matchesSearch && matchesClassification;
+  });
+
+  const classificationCounts = diseaseClassifications.reduce((acc, classification) => {
+    acc[classification] = diseases.filter(d => d.classification === classification).length;
+    return acc;
+  }, {} as Record<string, number>);
 
   return (
     <div className="space-y-6">
@@ -185,6 +227,26 @@ export const DiseaseManagement = () => {
         </div>
       </div>
 
+      {/* Classification Statistics */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Filter className="h-5 w-5 mr-2" />
+            Thống kê theo phân loại bệnh
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {diseaseClassifications.map((classification) => (
+              <div key={classification} className="bg-slate-50 p-3 rounded-lg text-center">
+                <div className="text-2xl font-bold text-slate-800">{classificationCounts[classification] || 0}</div>
+                <div className="text-sm text-slate-600">{classification}</div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <div className="flex items-center space-x-4">
@@ -197,6 +259,19 @@ export const DiseaseManagement = () => {
                 className="pl-10"
               />
             </div>
+            <Select value={selectedClassification} onValueChange={setSelectedClassification}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Lọc theo phân loại" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả phân loại</SelectItem>
+                {diseaseClassifications.map((classification) => (
+                  <SelectItem key={classification} value={classification}>
+                    {classification} ({classificationCounts[classification] || 0})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
         <CardContent>
@@ -206,6 +281,7 @@ export const DiseaseManagement = () => {
                 <TableHead>Tên bệnh</TableHead>
                 <TableHead>Mã ICD</TableHead>
                 <TableHead>Danh mục</TableHead>
+                <TableHead>Phân loại</TableHead>
                 <TableHead>Tài liệu</TableHead>
                 <TableHead>Yếu tố nguy cơ</TableHead>
                 <TableHead>Thao tác</TableHead>
@@ -217,6 +293,11 @@ export const DiseaseManagement = () => {
                   <TableCell className="font-medium">{disease.name}</TableCell>
                   <TableCell>{disease.code}</TableCell>
                   <TableCell>{disease.category}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="text-xs">
+                      {disease.classification}
+                    </Badge>
+                  </TableCell>
                   <TableCell>
                     <div className="flex space-x-1">
                       <Badge variant={disease.hasDescription ? 'default' : 'secondary'} className="text-xs">
@@ -294,12 +375,13 @@ const AddDiseaseForm = ({ onAdd }: { onAdd: (disease: Partial<Disease>) => void 
     name: '',
     code: '',
     category: '',
+    classification: '',
     description: '',
     summary: ''
   });
 
   const handleSubmit = () => {
-    if (formData.name && formData.code && formData.category) {
+    if (formData.name && formData.code && formData.category && formData.classification) {
       onAdd({
         ...formData,
         hasDescription: !!formData.description,
@@ -307,7 +389,7 @@ const AddDiseaseForm = ({ onAdd }: { onAdd: (disease: Partial<Disease>) => void 
         relatedTests: [],
         riskFactors: 0
       });
-      setFormData({ name: '', code: '', category: '', description: '', summary: '' });
+      setFormData({ name: '', code: '', category: '', classification: '', description: '', summary: '' });
     }
   };
 
@@ -338,6 +420,21 @@ const AddDiseaseForm = ({ onAdd }: { onAdd: (disease: Partial<Disease>) => void 
         />
       </div>
       <div>
+        <label className="block text-sm font-medium mb-1">Phân loại bệnh</label>
+        <Select value={formData.classification} onValueChange={(value) => setFormData({...formData, classification: value})}>
+          <SelectTrigger>
+            <SelectValue placeholder="Chọn phân loại bệnh" />
+          </SelectTrigger>
+          <SelectContent>
+            {diseaseClassifications.map((classification) => (
+              <SelectItem key={classification} value={classification}>
+                {classification}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
         <label className="block text-sm font-medium mb-1">Mô tả bệnh (tùy chọn)</label>
         <Textarea 
           placeholder="Nhập mô tả chi tiết về bệnh" 
@@ -356,7 +453,7 @@ const AddDiseaseForm = ({ onAdd }: { onAdd: (disease: Partial<Disease>) => void 
       <Button 
         className="w-full bg-red-600 hover:bg-red-700"
         onClick={handleSubmit}
-        disabled={!formData.name || !formData.code || !formData.category}
+        disabled={!formData.name || !formData.code || !formData.category || !formData.classification}
       >
         Thêm bệnh
       </Button>
@@ -408,6 +505,21 @@ const EditDiseaseForm = ({
         />
       </div>
       <div>
+        <label className="block text-sm font-medium mb-1">Phân loại bệnh</label>
+        <Select value={formData.classification} onValueChange={(value) => setFormData({...formData, classification: value})}>
+          <SelectTrigger>
+            <SelectValue placeholder="Chọn phân loại bệnh" />
+          </SelectTrigger>
+          <SelectContent>
+            {diseaseClassifications.map((classification) => (
+              <SelectItem key={classification} value={classification}>
+                {classification}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
         <label className="block text-sm font-medium mb-1">Mô tả bệnh</label>
         <Textarea 
           value={formData.description || ''}
@@ -457,9 +569,15 @@ const ViewDiseaseDetails = ({ disease }: { disease: Disease }) => {
         </div>
       </div>
       
-      <div>
-        <label className="block text-sm font-medium text-slate-600">Danh mục</label>
-        <p className="font-medium">{disease.category}</p>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-600">Danh mục</label>
+          <p className="font-medium">{disease.category}</p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-600">Phân loại</label>
+          <Badge variant="outline">{disease.classification}</Badge>
+        </div>
       </div>
 
       {disease.description && (

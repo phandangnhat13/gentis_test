@@ -4,9 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   Search, 
-  Download
+  Download,
+  Eye
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -17,6 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { PatientDetails } from './PatientDetails';
 
 interface PatientManagementProps {
   userRole: string;
@@ -24,6 +27,7 @@ interface PatientManagementProps {
 
 export const PatientManagement = ({ userRole }: PatientManagementProps) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const isCollaborator = userRole === 'collaborator';
   const { toast } = useToast();
 
@@ -40,6 +44,7 @@ export const PatientManagement = ({ userRole }: PatientManagementProps) => {
       assignedDate: '2024-01-10',
       lastVisit: '2024-01-15',
       status: 'active',
+      accountCode: isCollaborator ? 'COL001' : 'GEN001',
       tests: [
         {
           id: 1,
@@ -70,6 +75,7 @@ export const PatientManagement = ({ userRole }: PatientManagementProps) => {
       assignedDate: '2024-01-12',
       lastVisit: '2024-01-14',
       status: 'active',
+      accountCode: isCollaborator ? 'COL001' : 'GEN001',
       tests: [
         {
           id: 2,
@@ -103,6 +109,7 @@ export const PatientManagement = ({ userRole }: PatientManagementProps) => {
       - Số điện thoại: ${patient.phone}
       - Địa chỉ: ${patient.address}
       - Bác sĩ chỉ định: ${patient.assignedDoctor}
+      - Mã tài khoản: ${patient.accountCode}
       - Ngày phân công: ${patient.assignedDate}
       - Lần khám gần nhất: ${patient.lastVisit}
       - Trạng thái: ${patient.status === 'active' ? 'Đang điều trị' : 'Ngưng điều trị'}
@@ -130,6 +137,7 @@ export const PatientManagement = ({ userRole }: PatientManagementProps) => {
       Báo cáo được tạo bởi SLSS Gentis
       Ngày tạo: ${new Date().toLocaleString('vi-VN')}
       Người tạo: Bác sĩ ${userRole === 'collaborator' ? 'Cộng tác' : 'Chính'}
+      Tài khoản: ${patient.accountCode}
     `;
 
     const blob = new Blob([pdfContent], { type: 'text/plain;charset=utf-8' });
@@ -148,15 +156,34 @@ export const PatientManagement = ({ userRole }: PatientManagementProps) => {
     });
   };
 
-  const filteredPatients = patients.filter(patient =>
-    patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    patient.code.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleViewPatientDetails = (patient: any) => {
+    setSelectedPatient(patient);
+  };
+
+  // Filter patients by account code for collaborators
+  const filteredPatients = patients.filter(patient => {
+    const matchesSearch = patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      patient.code.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // For collaborators, only show patients with their account code
+    if (isCollaborator) {
+      return matchesSearch && patient.accountCode === 'COL001';
+    }
+    
+    return matchesSearch;
+  });
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-slate-800">Quản lý bệnh nhân</h2>
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800">Quản lý bệnh nhân</h2>
+          {isCollaborator && (
+            <p className="text-sm text-slate-600 mt-1">
+              Hiển thị bệnh nhân được phân công cho tài khoản: COL001
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Search */}
@@ -177,7 +204,14 @@ export const PatientManagement = ({ userRole }: PatientManagementProps) => {
       {/* Patient Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Danh sách bệnh nhân</CardTitle>
+          <CardTitle>
+            Danh sách bệnh nhân 
+            {isCollaborator && (
+              <Badge variant="outline" className="ml-2">
+                {filteredPatients.length} bệnh nhân được phân công
+              </Badge>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -208,14 +242,24 @@ export const PatientManagement = ({ userRole }: PatientManagementProps) => {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => handleDownloadDetails(patient)}
-                    >
-                      <Download className="h-3 w-3 mr-1" />
-                      Tải chi tiết
-                    </Button>
+                    <div className="flex space-x-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleViewPatientDetails(patient)}
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        Xem
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleDownloadDetails(patient)}
+                      >
+                        <Download className="h-3 w-3 mr-1" />
+                        Tải chi tiết
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -223,6 +267,20 @@ export const PatientManagement = ({ userRole }: PatientManagementProps) => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Patient Details Dialog */}
+      {selectedPatient && (
+        <Dialog open={!!selectedPatient} onOpenChange={() => setSelectedPatient(null)}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                Chi tiết bệnh nhân: {selectedPatient.name} ({selectedPatient.code})
+              </DialogTitle>
+            </DialogHeader>
+            <PatientDetails patient={selectedPatient} userRole={userRole} />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

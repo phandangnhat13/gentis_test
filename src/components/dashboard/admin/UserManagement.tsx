@@ -8,10 +8,14 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Edit, Trash2, Search } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export const UserManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [users] = useState([
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const { toast } = useToast();
+  
+  const [users, setUsers] = useState([
     {
       id: 1,
       name: 'BS. Nguyễn Văn A',
@@ -19,7 +23,8 @@ export const UserManagement = () => {
       email: 'bacsi.a@gentis.com',
       organization: 'Bệnh viện Đa khoa Trung ương',
       role: 'doctor',
-      status: 'active'
+      status: 'active',
+      accountCode: 'GEN001'
     },
     {
       id: 2,
@@ -28,7 +33,8 @@ export const UserManagement = () => {
       email: 'bacsi.b@hospital.com',
       organization: 'Bệnh viện Chợ Rẫy',
       role: 'collaborator',
-      status: 'active'
+      status: 'active',
+      accountCode: 'COL001'
     },
     {
       id: 3,
@@ -37,15 +43,71 @@ export const UserManagement = () => {
       email: 'bacsi.c@clinic.com',
       organization: 'Phòng khám Đa khoa ABC',
       role: 'doctor',
-      status: 'inactive'
+      status: 'inactive',
+      accountCode: 'GEN002'
     }
   ]);
+
+  const handleCreateUser = (formData: FormData) => {
+    const name = formData.get('name') as string;
+    const phone = formData.get('phone') as string;
+    const email = formData.get('email') as string;
+    const organization = formData.get('organization') as string;
+    const role = formData.get('role') as string;
+
+    if (!name || !phone || !email || !organization || !role) {
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng điền đầy đủ thông tin",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Generate account code
+    const prefix = role === 'doctor' ? 'GEN' : 'COL';
+    const count = users.filter(u => u.role === role).length + 1;
+    const accountCode = `${prefix}${count.toString().padStart(3, '0')}`;
+
+    const newUser = {
+      id: users.length + 1,
+      name,
+      phone,
+      email,
+      organization,
+      role,
+      status: 'active',
+      accountCode
+    };
+
+    setUsers([...users, newUser]);
+    setIsCreateDialogOpen(false);
+    
+    toast({
+      title: "Tạo tài khoản thành công",
+      description: `Đã tạo tài khoản cho ${name} với mã ${accountCode}`,
+    });
+  };
+
+  const handleDeleteUser = (userId: number) => {
+    setUsers(users.filter(u => u.id !== userId));
+    toast({
+      title: "Xóa tài khoản",
+      description: "Đã xóa tài khoản thành công",
+    });
+  };
+
+  const filteredUsers = users.filter(user =>
+    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.accountCode.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-slate-800">Quản lý người dùng</h2>
-        <Dialog>
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button className="bg-red-600 hover:bg-red-700">
               <Plus className="h-4 w-4 mr-2" />
@@ -54,28 +116,31 @@ export const UserManagement = () => {
           </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Thêm bác sĩ mới</DialogTitle>
+              <DialogTitle>Tạo tài khoản bác sĩ mới</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              handleCreateUser(new FormData(e.currentTarget));
+            }} className="space-y-4">
               <div>
-                <Label htmlFor="name">Họ tên</Label>
-                <Input id="name" placeholder="Nhập họ tên bác sĩ" />
+                <Label htmlFor="name">Họ tên *</Label>
+                <Input id="name" name="name" placeholder="Nhập họ tên bác sĩ" required />
               </div>
               <div>
-                <Label htmlFor="phone">Số điện thoại</Label>
-                <Input id="phone" placeholder="Nhập số điện thoại" />
+                <Label htmlFor="phone">Số điện thoại *</Label>
+                <Input id="phone" name="phone" placeholder="Nhập số điện thoại" required />
               </div>
               <div>
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="Nhập email" />
+                <Label htmlFor="email">Email *</Label>
+                <Input id="email" name="email" type="email" placeholder="Nhập email" required />
               </div>
               <div>
-                <Label htmlFor="organization">Cơ quan công tác</Label>
-                <Input id="organization" placeholder="Nhập tên cơ quan" />
+                <Label htmlFor="organization">Cơ quan công tác *</Label>
+                <Input id="organization" name="organization" placeholder="Nhập tên cơ quan" required />
               </div>
               <div>
-                <Label htmlFor="role">Vai trò</Label>
-                <Select>
+                <Label htmlFor="role">Vai trò *</Label>
+                <Select name="role" required>
                   <SelectTrigger>
                     <SelectValue placeholder="Chọn vai trò" />
                   </SelectTrigger>
@@ -85,8 +150,10 @@ export const UserManagement = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <Button className="w-full bg-red-600 hover:bg-red-700">Tạo tài khoản</Button>
-            </div>
+              <Button type="submit" className="w-full bg-red-600 hover:bg-red-700">
+                Tạo tài khoản
+              </Button>
+            </form>
           </DialogContent>
         </Dialog>
       </div>
@@ -110,6 +177,7 @@ export const UserManagement = () => {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-slate-200">
+                  <th className="text-left p-3 font-medium text-slate-600">Mã tài khoản</th>
                   <th className="text-left p-3 font-medium text-slate-600">Họ tên</th>
                   <th className="text-left p-3 font-medium text-slate-600">Số điện thoại</th>
                   <th className="text-left p-3 font-medium text-slate-600">Email</th>
@@ -120,8 +188,11 @@ export const UserManagement = () => {
                 </tr>
               </thead>
               <tbody>
-                {users.map((user) => (
+                {filteredUsers.map((user) => (
                   <tr key={user.id} className="border-b border-slate-100 hover:bg-slate-50">
+                    <td className="p-3">
+                      <div className="font-mono text-sm font-medium text-red-600">{user.accountCode}</div>
+                    </td>
                     <td className="p-3">
                       <div className="font-medium text-slate-800">{user.name}</div>
                     </td>
@@ -143,7 +214,12 @@ export const UserManagement = () => {
                         <Button size="sm" variant="outline">
                           <Edit className="h-3 w-3" />
                         </Button>
-                        <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="text-red-600 hover:text-red-700"
+                          onClick={() => handleDeleteUser(user.id)}
+                        >
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
