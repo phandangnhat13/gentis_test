@@ -166,6 +166,66 @@ export const TestManagement = ({ userRole }: TestManagementProps) => {
   const handleExportReport = (testId: number) => {
     const test = tests.find(t => t.id === testId);
     if (test) {
+      // Determine test type and access appropriate properties
+      let testSpecificDetails = '';
+      let abnormalSamplesDetails = '';
+
+      if (test.name.includes('Sinh hóa máu')) {
+        if (isCollaborator) {
+          // For collaborator ALT/AST tests
+          const results = test.detailedResults as any;
+          testSpecificDetails = `- ALT trung bình: ${results.averageALT || 'N/A'} U/L
+- AST trung bình: ${results.averageAST || 'N/A'} U/L`;
+          
+          abnormalSamplesDetails = results.abnormalSamples?.length > 0 ? 
+            results.abnormalSamples.map((sample: any, index: number) => 
+              `${index + 1}. Mã BN: ${sample.patientId}
+     - ALT: ${sample.alt} U/L
+     - AST: ${sample.ast} U/L
+     - Mức độ nguy cơ: ${sample.risk === 'high' ? 'Cao' : 'Trung bình'}`
+            ).join('\n') : 'Không có mẫu bất thường';
+        } else {
+          // For doctor glucose/cholesterol tests
+          const results = test.detailedResults as any;
+          testSpecificDetails = `- Glucose trung bình: ${results.averageGlucose || 'N/A'} mg/dL
+- Cholesterol trung bình: ${results.averageCholesterol || 'N/A'} mg/dL`;
+          
+          abnormalSamplesDetails = results.abnormalSamples?.length > 0 ? 
+            results.abnormalSamples.map((sample: any, index: number) => 
+              `${index + 1}. Mã BN: ${sample.patientId}
+     - Glucose: ${sample.glucose} mg/dL
+     - Cholesterol: ${sample.cholesterol} mg/dL
+     - Mức độ nguy cơ: ${sample.risk === 'high' ? 'Cao' : 'Trung bình'}`
+            ).join('\n') : 'Không có mẫu bất thường';
+        }
+      } else if (test.name.includes('Lipid profile')) {
+        const results = test.detailedResults as any;
+        testSpecificDetails = `- Total Cholesterol trung bình: ${results.averageTotalCholesterol || 'N/A'} mg/dL
+- LDL trung bình: ${results.averageLDL || 'N/A'} mg/dL
+- HDL trung bình: ${results.averageHDL || 'N/A'} mg/dL`;
+        
+        abnormalSamplesDetails = results.abnormalSamples?.length > 0 ? 
+          results.abnormalSamples.map((sample: any, index: number) => 
+            `${index + 1}. Mã BN: ${sample.patientId}
+     - Total Cholesterol: ${sample.totalChol} mg/dL
+     - LDL: ${sample.ldl} mg/dL
+     - HDL: ${sample.hdl} mg/dL
+     - Mức độ nguy cơ: ${sample.risk === 'high' ? 'Cao' : 'Trung bình'}`
+          ).join('\n') : 'Không có mẫu bất thường';
+      } else if (test.name.includes('HbA1c')) {
+        const results = test.detailedResults as any;
+        testSpecificDetails = `- HbA1c trung bình: ${results.averageHbA1c || 'N/A'}%
+- Glucose trung bình: ${results.averageGlucose || 'N/A'} mg/dL`;
+        
+        abnormalSamplesDetails = results.abnormalSamples?.length > 0 ? 
+          results.abnormalSamples.map((sample: any, index: number) => 
+            `${index + 1}. Mã BN: ${sample.patientId}
+     - HbA1c: ${sample.hba1c}%
+     - Glucose: ${sample.glucose} mg/dL
+     - Mức độ nguy cơ: ${sample.risk === 'high' ? 'Cao' : 'Trung bình'}`
+          ).join('\n') : 'Không có mẫu bất thường';
+      }
+
       // Tạo báo cáo chi tiết với tất cả thông tin
       const reportContent = `
 BÁO CÁO XÉT NGHIỆM CHI TIẾT
@@ -189,42 +249,10 @@ CÁC BỆNH ĐƯỢC GỢI Ý:
 ${test.suggestedDiseases.length > 0 ? test.suggestedDiseases.map((disease, index) => `${index + 1}. ${disease}`).join('\n') : 'Không có bệnh được phát hiện'}
 
 CHI TIẾT KẾT QUẢ XÉT NGHIỆM:
-${test.name.includes('Sinh hóa máu') ? `
-${isCollaborator ? `- ALT trung bình: ${test.detailedResults.averageALT} U/L
-- AST trung bình: ${test.detailedResults.averageAST} U/L` : `- Glucose trung bình: ${test.detailedResults.averageGlucose} mg/dL
-- Cholesterol trung bình: ${test.detailedResults.averageCholesterol} mg/dL`}
+${testSpecificDetails}
 
 DANH SÁCH MẪU BẤT THƯỜNG:
-${test.detailedResults.abnormalSamples.length > 0 ? test.detailedResults.abnormalSamples.map((sample: any, index: number) => 
-  `${index + 1}. Mã BN: ${sample.patientId}
-     ${isCollaborator ? `- ALT: ${sample.alt} U/L
-     - AST: ${sample.ast} U/L` : `- Glucose: ${sample.glucose} mg/dL
-     - Cholesterol: ${sample.cholesterol} mg/dL`}
-     - Mức độ nguy cơ: ${sample.risk === 'high' ? 'Cao' : 'Trung bình'}`
-).join('\n') : 'Không có mẫu bất thường'}` : 
-test.name === 'Lipid profile' ? `
-- Total Cholesterol trung bình: ${test.detailedResults.averageTotalCholesterol} mg/dL
-- LDL trung bình: ${test.detailedResults.averageLDL} mg/dL
-- HDL trung bình: ${test.detailedResults.averageHDL} mg/dL
-
-DANH SÁCH MẪU BẤT THƯỜNG:
-${test.detailedResults.abnormalSamples.length > 0 ? test.detailedResults.abnormalSamples.map((sample: any, index: number) => 
-  `${index + 1}. Mã BN: ${sample.patientId}
-     - Total Cholesterol: ${sample.totalChol} mg/dL
-     - LDL: ${sample.ldl} mg/dL
-     - HDL: ${sample.hdl} mg/dL
-     - Mức độ nguy cơ: ${sample.risk === 'high' ? 'Cao' : 'Trung bình'}`
-).join('\n') : 'Không có mẫu bất thường'}` : `
-- HbA1c trung bình: ${test.detailedResults.averageHbA1c}%
-- Glucose trung bình: ${test.detailedResults.averageGlucose} mg/dL
-
-DANH SÁCH MẪU BẤT THƯỜNG:
-${test.detailedResults.abnormalSamples.map((sample: any, index: number) => 
-  `${index + 1}. Mã BN: ${sample.patientId}
-     - HbA1c: ${sample.hba1c}%
-     - Glucose: ${sample.glucose} mg/dL
-     - Mức độ nguy cơ: ${sample.risk === 'high' ? 'Cao' : 'Trung bình'}`
-).join('\n')}`}
+${abnormalSamplesDetails}
 
 KHUYẾN NGHỊ:
 - Theo dõi chặt chẽ các bệnh nhân có nguy cơ cao
