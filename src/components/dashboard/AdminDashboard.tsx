@@ -12,7 +12,10 @@ import {
   Database,
   Activity,
   Bell,
-  UserCheck
+  UserCheck,
+  BarChart3,
+  TrendingUp,
+  AlertTriangle
 } from 'lucide-react';
 import { UserManagement } from './admin/UserManagement';
 import { DiseaseManagement } from './admin/DiseaseManagement';
@@ -30,6 +33,22 @@ interface AdminDashboardProps {
 
 export const AdminDashboard = ({ user, onLogout }: AdminDashboardProps) => {
   const [activeTab, setActiveTab] = useState('overview');
+
+  // Enhanced statistics data
+  const systemStats = {
+    totalPatients: 1248,
+    totalDoctors: 24,
+    totalDiseases: 157,
+    testSamples: 1234,
+    accuracy: 94.2,
+    positiveResults: 312,
+    negativeResults: 922,
+    branches: [
+      { name: 'Chi nhánh Hà Nội', patients: 456, positive: 123, negative: 333 },
+      { name: 'Chi nhánh TP.HCM', patients: 523, positive: 142, negative: 381 },
+      { name: 'Chi nhánh Đà Nẵng', patients: 269, positive: 47, negative: 222 }
+    ]
+  };
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -69,8 +88,8 @@ export const AdminDashboard = ({ user, onLogout }: AdminDashboardProps) => {
                   value="overview" 
                   className="w-full justify-start data-[state=active]:bg-red-50 data-[state=active]:text-red-700"
                 >
-                  <Settings className="h-4 w-4 mr-3" />
-                  Tổng quan
+                  <BarChart3 className="h-4 w-4 mr-3" />
+                  Thống kê tổng quan
                 </TabsTrigger>
                 <TabsTrigger 
                   value="users" 
@@ -109,45 +128,121 @@ export const AdminDashboard = ({ user, onLogout }: AdminDashboardProps) => {
         <main className="flex-1 p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsContent value="overview" className="mt-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+              <div className="space-y-6">
+                {/* Main Statistics */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Tổng số bệnh nhân</CardTitle>
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{systemStats.totalPatients}</div>
+                      <p className="text-xs text-muted-foreground">Tất cả chi nhánh</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Tổng số bác sĩ</CardTitle>
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{systemStats.totalDoctors}</div>
+                      <p className="text-xs text-muted-foreground">+2 từ tháng trước</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Số bệnh trong hệ thống</CardTitle>
+                      <Database className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{systemStats.totalDiseases}</div>
+                      <p className="text-xs text-muted-foreground">+12 bệnh mới</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Độ chính xác</CardTitle>
+                      <Activity className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{systemStats.accuracy}%</div>
+                      <p className="text-xs text-muted-foreground">Gợi ý chẩn đoán</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Results Statistics */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Kết quả dương tính</CardTitle>
+                      <AlertTriangle className="h-4 w-4 text-red-500" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-red-600">{systemStats.positiveResults}</div>
+                      <p className="text-xs text-muted-foreground">
+                        {((systemStats.positiveResults / systemStats.totalPatients) * 100).toFixed(1)}% tổng số bệnh nhân
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Kết quả âm tính</CardTitle>
+                      <TrendingUp className="h-4 w-4 text-green-500" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-green-600">{systemStats.negativeResults}</div>
+                      <p className="text-xs text-muted-foreground">
+                        {((systemStats.negativeResults / systemStats.totalPatients) * 100).toFixed(1)}% tổng số bệnh nhân
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Mẫu xét nghiệm</CardTitle>
+                      <Database className="h-4 w-4 text-blue-500" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-blue-600">{systemStats.testSamples}</div>
+                      <p className="text-xs text-muted-foreground">Tuần này</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Branch Statistics */}
                 <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Tổng số bác sĩ</CardTitle>
-                    <Users className="h-4 w-4 text-muted-foreground" />
+                  <CardHeader>
+                    <CardTitle>Thống kê theo chi nhánh</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">24</div>
-                    <p className="text-xs text-muted-foreground">+2 từ tháng trước</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Số bệnh trong hệ thống</CardTitle>
-                    <Database className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">157</div>
-                    <p className="text-xs text-muted-foreground">+12 bệnh mới</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Mẫu xét nghiệm</CardTitle>
-                    <Activity className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">1,234</div>
-                    <p className="text-xs text-muted-foreground">Tuần này</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Độ chính xác</CardTitle>
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">94.2%</div>
-                    <p className="text-xs text-muted-foreground">Gợi ý chẩn đoán</p>
+                    <div className="space-y-4">
+                      {systemStats.branches.map((branch, index) => (
+                        <div key={index} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                          <div>
+                            <h3 className="font-medium text-slate-800">{branch.name}</h3>
+                            <p className="text-sm text-slate-600">Tổng số bệnh nhân: {branch.patients}</p>
+                          </div>
+                          <div className="flex space-x-4">
+                            <div className="text-center">
+                              <div className="text-lg font-bold text-red-600">{branch.positive}</div>
+                              <div className="text-xs text-slate-600">Dương tính</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-lg font-bold text-green-600">{branch.negative}</div>
+                              <div className="text-xs text-slate-600">Âm tính</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-lg font-bold text-blue-600">
+                                {((branch.positive / branch.patients) * 100).toFixed(1)}%
+                              </div>
+                              <div className="text-xs text-slate-600">Tỷ lệ dương</div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </CardContent>
                 </Card>
               </div>

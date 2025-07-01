@@ -37,6 +37,7 @@ import {
 } from 'lucide-react';
 import { PatientManagement } from './doctor/PatientManagement';
 import { TestManagement } from './doctor/TestManagement';
+import { GentisTestManagement } from './doctor/GentisTestManagement';
 import { DiseaseView } from './doctor/DiseaseView';
 import { TestAnalysis } from './doctor/TestAnalysis';
 import { DataAnalysis } from './doctor/DataAnalysis';
@@ -107,7 +108,12 @@ export const DoctorDashboard = ({ user, onLogout }: DoctorDashboardProps) => {
       case 'patients':
         return <PatientManagement userRole={user.role} />;
       case 'tests':
-        return <TestManagement userRole={user.role} />;
+        // Use enhanced test management for Gentis role
+        return user.role === 'doctor' ? (
+          <GentisTestManagement />
+        ) : (
+          <TestManagement userRole={user.role} />
+        );
       case 'analysis':
         return user.role !== 'collaborator' ? (
           <TestAnalysis userRole={user.role} />
@@ -133,6 +139,19 @@ export const DoctorDashboard = ({ user, onLogout }: DoctorDashboardProps) => {
     }
   };
 
+  const getUserRoleDisplay = () => {
+    switch (user.role) {
+      case 'doctor':
+        return 'Bác sĩ Gentis';
+      case 'collaborator':
+        return 'Bác sĩ cộng tác';
+      case 'admin':
+        return 'Quản trị viên';
+      default:
+        return user.role;
+    }
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen bg-slate-50 flex w-full">
@@ -148,7 +167,7 @@ export const DoctorDashboard = ({ user, onLogout }: DoctorDashboardProps) => {
               <div className="flex items-center">
                 <SidebarTrigger className="mr-4" />
                 <h1 className="text-2xl font-bold text-slate-800">
-                  Chào mừng, {user.name} ({user.role === 'collaborator' ? 'Bác sĩ cộng tác' : user.role === 'doctor' ? 'Bác sĩ' : 'Quản trị viên'})
+                  Chào mừng, {user.name} ({getUserRoleDisplay()})
                 </h1>
               </div>
               <DropdownMenu>
