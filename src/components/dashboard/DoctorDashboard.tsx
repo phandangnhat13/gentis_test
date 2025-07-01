@@ -27,20 +27,20 @@ import {
 } from "@/components/ui/sidebar"
 import { 
   User, 
-  FileText, 
   Users, 
   TestTube, 
   BarChart3, 
   Database, 
   BookOpen,
-  Activity
+  Activity,
+  Settings
 } from 'lucide-react';
-import { ReportsView } from './doctor/ReportsView';
 import { PatientManagement } from './doctor/PatientManagement';
 import { TestManagement } from './doctor/TestManagement';
 import { DiseaseView } from './doctor/DiseaseView';
 import { TestAnalysis } from './doctor/TestAnalysis';
 import { DataAnalysis } from './doctor/DataAnalysis';
+import { ProfileManagement } from './doctor/ProfileManagement';
 
 interface DoctorDashboardProps {
   user: {
@@ -52,12 +52,12 @@ interface DoctorDashboardProps {
 }
 
 const menuItems = [
-  { id: 'reports', label: 'Báo cáo chẩn đoán', icon: FileText },
   { id: 'patients', label: 'Quản lý bệnh nhân', icon: Users },
   { id: 'tests', label: 'Quản lý xét nghiệm', icon: TestTube },
   { id: 'analysis', label: 'Phân tích số liệu', icon: BarChart3 },
   { id: 'batch', label: 'Phân tích hàng loạt', icon: Database },
   { id: 'diseases', label: 'Danh mục bệnh', icon: BookOpen },
+  { id: 'profile', label: 'Hồ sơ cá nhân', icon: Settings },
 ];
 
 const DoctorSidebar = ({ activeTab, setActiveTab, userRole }: { 
@@ -99,12 +99,10 @@ const DoctorSidebar = ({ activeTab, setActiveTab, userRole }: {
 };
 
 export const DoctorDashboard = ({ user, onLogout }: DoctorDashboardProps) => {
-  const [activeTab, setActiveTab] = useState('reports');
+  const [activeTab, setActiveTab] = useState('patients');
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'reports':
-        return <ReportsView userRole={user.role} />;
       case 'patients':
         return <PatientManagement userRole={user.role} />;
       case 'tests':
@@ -127,8 +125,10 @@ export const DoctorDashboard = ({ user, onLogout }: DoctorDashboardProps) => {
         );
       case 'diseases':
         return <DiseaseView />;
+      case 'profile':
+        return <ProfileManagement user={user} />;
       default:
-        return <ReportsView userRole={user.role} />;
+        return <PatientManagement userRole={user.role} />;
     }
   };
 
@@ -162,7 +162,7 @@ export const DoctorDashboard = ({ user, onLogout }: DoctorDashboardProps) => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>Tài khoản</DropdownMenuLabel>
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActiveTab('profile')}>
                     Hồ sơ
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />

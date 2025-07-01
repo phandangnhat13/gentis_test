@@ -4,12 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Info } from 'lucide-react';
+import { Search, Eye } from 'lucide-react';
 
 export const DiseaseView = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedDisease, setSelectedDisease] = useState<any>(null);
+  
   const [diseases] = useState([
     {
       id: 1,
@@ -100,92 +102,29 @@ export const DiseaseView = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Tên bệnh</TableHead>
                 <TableHead>Mã ICD</TableHead>
+                <TableHead>Tên bệnh</TableHead>
                 <TableHead>Chuyên khoa</TableHead>
                 <TableHead>Mức độ nguy cơ</TableHead>
-                <TableHead>Chỉ số liên quan</TableHead>
-                <TableHead className="text-right">Thao tác</TableHead>
+                <TableHead>Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredDiseases.map((disease) => (
                 <TableRow key={disease.id}>
+                  <TableCell className="font-mono">{disease.code}</TableCell>
                   <TableCell className="font-medium">{disease.name}</TableCell>
-                  <TableCell>{disease.code}</TableCell>
                   <TableCell>{disease.category}</TableCell>
                   <TableCell>{getRiskBadge(disease.riskLevel)}</TableCell>
                   <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {disease.biomarkers.slice(0, 2).map((marker, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
-                          {marker}
-                        </Badge>
-                      ))}
-                      {disease.biomarkers.length > 2 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{disease.biomarkers.length - 2}
-                        </Badge>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button size="sm" variant="outline">
-                          <Info className="h-3 w-3 mr-1" />
-                          Chi tiết
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-2xl">
-                        <DialogHeader>
-                          <DialogTitle>{disease.name}</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div>
-                            <h4 className="font-medium mb-2">Thông tin cơ bản</h4>
-                            <div className="bg-slate-50 p-3 rounded-lg space-y-2">
-                              <div><strong>Mã ICD:</strong> {disease.code}</div>
-                              <div><strong>Chuyên khoa:</strong> {disease.category}</div>
-                              <div className="flex items-center"><strong>Mức độ nguy cơ:</strong> <span className="ml-2">{getRiskBadge(disease.riskLevel)}</span></div>
-                            </div>
-                          </div>
-                          
-                          <div>
-                            <h4 className="font-medium mb-2">Mô tả</h4>
-                            <p className="text-sm text-slate-700">{disease.description}</p>
-                          </div>
-
-                          <div>
-                            <h4 className="font-medium mb-2">Triệu chứng thường gặp</h4>
-                            <ul className="text-sm text-slate-700 space-y-1">
-                              {disease.symptoms.map((symptom, index) => (
-                                <li key={index} className="flex items-start">
-                                  <span className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-2 flex-shrink-0"></span>
-                                  {symptom}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-
-                          <div>
-                            <h4 className="font-medium mb-2">Hướng điều trị</h4>
-                            <p className="text-sm text-slate-700">{disease.treatment}</p>
-                          </div>
-
-                          <div>
-                            <h4 className="font-medium mb-2">Chỉ số sinh học liên quan</h4>
-                            <div className="flex flex-wrap gap-2">
-                              {disease.biomarkers.map((marker, index) => (
-                                <Badge key={index} variant="outline">
-                                  {marker}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => setSelectedDisease(disease)}
+                    >
+                      <Eye className="h-3 w-3 mr-1" />
+                      Xem chi tiết
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -193,6 +132,60 @@ export const DiseaseView = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Disease Detail Dialog */}
+      {selectedDisease && (
+        <Dialog open={!!selectedDisease} onOpenChange={() => setSelectedDisease(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{selectedDisease.name}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-medium mb-2">Thông tin cơ bản</h4>
+                <div className="bg-slate-50 p-3 rounded-lg space-y-2">
+                  <div><strong>Mã ICD:</strong> {selectedDisease.code}</div>
+                  <div><strong>Chuyên khoa:</strong> {selectedDisease.category}</div>
+                  <div className="flex items-center"><strong>Mức độ nguy cơ:</strong> <span className="ml-2">{getRiskBadge(selectedDisease.riskLevel)}</span></div>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-medium mb-2">Mô tả</h4>
+                <p className="text-sm text-slate-700">{selectedDisease.description}</p>
+              </div>
+
+              <div>
+                <h4 className="font-medium mb-2">Triệu chứng thường gặp</h4>
+                <ul className="text-sm text-slate-700 space-y-1">
+                  {selectedDisease.symptoms.map((symptom: string, index: number) => (
+                    <li key={index} className="flex items-start">
+                      <span className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                      {symptom}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="font-medium mb-2">Hướng điều trị</h4>
+                <p className="text-sm text-slate-700">{selectedDisease.treatment}</p>
+              </div>
+
+              <div>
+                <h4 className="font-medium mb-2">Chỉ số sinh học liên quan</h4>
+                <div className="flex flex-wrap gap-2">
+                  {selectedDisease.biomarkers.map((marker: string, index: number) => (
+                    <Badge key={index} variant="outline">
+                      {marker}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
