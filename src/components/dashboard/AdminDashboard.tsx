@@ -10,7 +10,6 @@ import {
   Database,
   Activity,
   Bell,
-  UserCheck,
   BarChart3,
   TrendingUp,
   AlertTriangle,
@@ -18,7 +17,6 @@ import {
 } from 'lucide-react';
 import { UserManagement } from './admin/UserManagement';
 import { DiseaseManagement } from './admin/DiseaseManagement';
-import { PatientAssignment } from './admin/PatientAssignment';
 
 interface AdminDashboardProps {
   user: {
@@ -38,7 +36,6 @@ export const AdminDashboard = ({ user, onLogout }: AdminDashboardProps) => {
     totalDoctors: 24,
     totalDiseases: 157,
     testSamples: 1234,
-    accuracy: 94.2,
     positiveResults: 312,
     negativeResults: 922,
     positiveRate: 25.0,
@@ -101,13 +98,6 @@ export const AdminDashboard = ({ user, onLogout }: AdminDashboardProps) => {
                   Quản lý người dùng
                 </TabsTrigger>
                 <TabsTrigger 
-                  value="assignments" 
-                  className="w-full justify-start data-[state=active]:bg-red-50 data-[state=active]:text-red-700"
-                >
-                  <UserCheck className="h-4 w-4 mr-3" />
-                  Phân công bệnh nhân
-                </TabsTrigger>
-                <TabsTrigger 
                   value="diseases" 
                   className="w-full justify-start data-[state=active]:bg-red-50 data-[state=active]:text-red-700"
                 >
@@ -125,7 +115,7 @@ export const AdminDashboard = ({ user, onLogout }: AdminDashboardProps) => {
             <TabsContent value="overview" className="mt-0">
               <div className="space-y-6">
                 {/* Main Statistics */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Tổng số bệnh nhân</CardTitle>
@@ -154,16 +144,6 @@ export const AdminDashboard = ({ user, onLogout }: AdminDashboardProps) => {
                     <CardContent>
                       <div className="text-2xl font-bold">{systemStats.totalDiseases}</div>
                       <p className="text-xs text-muted-foreground">+12 bệnh mới</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Độ chính xác</CardTitle>
-                      <Activity className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{systemStats.accuracy}%</div>
-                      <p className="text-xs text-muted-foreground">Gợi ý chẩn đoán</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -289,10 +269,6 @@ export const AdminDashboard = ({ user, onLogout }: AdminDashboardProps) => {
 
             <TabsContent value="users" className="mt-0">
               <UserManagement />
-            </TabsContent>
-
-            <TabsContent value="assignments" className="mt-0">
-              <PatientAssignment />
             </TabsContent>
 
             <TabsContent value="diseases" className="mt-0">

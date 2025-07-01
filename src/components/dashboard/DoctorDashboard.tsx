@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,11 +36,10 @@ import {
   Settings,
   Eye
 } from 'lucide-react';
-import { PatientManagement } from './doctor/PatientManagement';
+import { TestResultManagement } from './doctor/TestResultManagement';
 import { TestManagement } from './doctor/TestManagement';
 import { GentisTestManagement } from './doctor/GentisTestManagement';
 import { DiseaseView } from './doctor/DiseaseView';
-import { TestAnalysis } from './doctor/TestAnalysis';
 import { DataAnalysis } from './doctor/DataAnalysis';
 import { ProfileManagement } from './doctor/ProfileManagement';
 
@@ -53,10 +53,16 @@ interface DoctorDashboardProps {
 }
 
 const menuItems = [
-  { id: 'patients', label: 'Quản lý bệnh nhân', icon: Users },
-  { id: 'tests', label: 'Quản lý xét nghiệm', icon: TestTube },
-  { id: 'analysis', label: 'Phân tích số liệu', icon: BarChart3 },
+  { id: 'tests-result', label: 'Quản lý xét nghiệm', icon: Users },
+  { id: 'tests', label: 'Tạo xét nghiệm', icon: TestTube },
   { id: 'batch', label: 'Phân tích hàng loạt', icon: Database },
+  { id: 'diseases', label: 'Danh mục bệnh', icon: BookOpen },
+  { id: 'profile', label: 'Hồ sơ cá nhân', icon: Settings },
+];
+
+const collaboratorMenuItems = [
+  { id: 'tests-result', label: 'Quản lý xét nghiệm', icon: Users },
+  { id: 'tests', label: 'Xem xét nghiệm', icon: TestTube },
   { id: 'diseases', label: 'Danh mục bệnh', icon: BookOpen },
   { id: 'profile', label: 'Hồ sơ cá nhân', icon: Settings },
 ];
@@ -66,17 +72,7 @@ const DoctorSidebar = ({ activeTab, setActiveTab, userRole }: {
   setActiveTab: (tab: string) => void;
   userRole: string;
 }) => {
-  let filteredMenuItems;
-  
-  if (userRole === 'collaborator') {
-    // Collaborator menu: patients, tests (view only), diseases, profile
-    filteredMenuItems = menuItems.filter(item => 
-      ['patients', 'tests', 'diseases', 'profile'].includes(item.id)
-    );
-  } else {
-    // Doctor menu: all items
-    filteredMenuItems = menuItems;
-  }
+  const filteredMenuItems = userRole === 'collaborator' ? collaboratorMenuItems : menuItems;
 
   return (
     <Sidebar className="w-64">
@@ -109,26 +105,18 @@ const DoctorSidebar = ({ activeTab, setActiveTab, userRole }: {
 };
 
 export const DoctorDashboard = ({ user, onLogout }: DoctorDashboardProps) => {
-  const [activeTab, setActiveTab] = useState('patients');
+  const [activeTab, setActiveTab] = useState('tests-result');
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'patients':
-        return <PatientManagement userRole={user.role} />;
+      case 'tests-result':
+        return <TestResultManagement userRole={user.role} />;
       case 'tests':
         // Use enhanced test management for Gentis role, regular test management for collaborators
         return user.role === 'doctor' ? (
           <GentisTestManagement />
         ) : (
           <TestManagement userRole={user.role} />
-        );
-      case 'analysis':
-        return user.role !== 'collaborator' ? (
-          <TestAnalysis userRole={user.role} />
-        ) : (
-          <div className="text-center py-12">
-            <p className="text-slate-600">Bác sĩ cộng tác không có quyền truy cập chức năng này</p>
-          </div>
         );
       case 'batch':
         return user.role !== 'collaborator' ? (
@@ -143,14 +131,14 @@ export const DoctorDashboard = ({ user, onLogout }: DoctorDashboardProps) => {
       case 'profile':
         return <ProfileManagement user={user} />;
       default:
-        return <PatientManagement userRole={user.role} />;
+        return <TestResultManagement userRole={user.role} />;
     }
   };
 
   const getUserRoleDisplay = () => {
     switch (user.role) {
       case 'doctor':
-        return 'Bác sĩ Gentis';
+        return 'Bác sĩ';
       case 'collaborator':
         return 'Bác sĩ cộng tác';
       case 'admin':

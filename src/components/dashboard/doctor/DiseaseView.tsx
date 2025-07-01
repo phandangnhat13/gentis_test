@@ -1,87 +1,68 @@
 
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Eye } from 'lucide-react';
+import { Search, FileText, Info } from 'lucide-react';
 
 export const DiseaseView = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDisease, setSelectedDisease] = useState<any>(null);
-  
+  const [viewType, setViewType] = useState<'detail' | 'summary'>('detail');
+
   const [diseases] = useState([
     {
       id: 1,
+      code: 'D001',
       name: 'Tiểu đường type 2',
-      code: 'E11',
-      category: 'Nội tiết',
-      riskLevel: 'high',
-      biomarkers: ['Glucose', 'HbA1c', 'Insulin'],
-      description: 'Bệnh tiểu đường type 2 là tình trạng mức đường huyết cao do cơ thể không sản xuất đủ insulin hoặc không sử dụng insulin hiệu quả.',
-      symptoms: ['Khát nước nhiều', 'Tiểu nhiều', 'Mệt mỏi', 'Giảm cân không rõ nguyên nhân'],
-      treatment: 'Điều chỉnh chế độ ăn uống, tập thể dục, thuốc hạ đường huyết, insulin nếu cần thiết.'
+      classification: 'Bệnh nội tiết',
+      description: 'Bệnh tiểu đường type 2 là một rối loạn chuyển hóa mãn tính...',
+      symptoms: ['Khát nước nhiều', 'Tiểu nhiều', 'Mệt mỏi', 'Sụt cân'],
+      diagnosis: 'Dựa vào xét nghiệm glucose máu đói, HbA1c...',
+      treatment: 'Điều chỉnh chế độ ăn uống, tập thể dục, dùng thuốc...',
+      summary: 'Bệnh tiểu đường type 2 gây ra do tế bào kháng insulin hoặc tuyến tụy không sản xuất đủ insulin.'
     },
     {
       id: 2,
+      code: 'D002',
       name: 'Rối loạn lipid máu',
-      code: 'E78',
-      category: 'Tim mạch',
-      riskLevel: 'medium',
-      biomarkers: ['Total Cholesterol', 'LDL', 'HDL', 'Triglycerides'],
-      description: 'Rối loạn lipid máu là tình trạng bất thường của các chất béo trong máu, có thể dẫn đến bệnh tim mạch.',
-      symptoms: ['Thường không có triệu chứng', 'Có thể xuất hiện u mỡ dưới da'],
-      treatment: 'Thay đổi lối sống, chế độ ăn ít béo, tập thể dục, thuốc statin nếu cần.'
+      classification: 'Bệnh tim mạch',
+      description: 'Rối loạn lipid máu là tình trạng bất thường trong nồng độ lipid...',
+      symptoms: ['Thường không có triệu chứng', 'Có thể đau ngực'],
+      diagnosis: 'Xét nghiệm lipid máu, cholesterol total, LDL, HDL...',
+      treatment: 'Thay đổi lối sống, thuốc hạ lipid máu...',
+      summary: 'Rối loạn lipid máu tăng nguy cơ bệnh tim mạch, cần kiểm soát chế độ ăn và dùng thuốc.'
     },
     {
       id: 3,
+      code: 'D003', 
       name: 'Gan nhiễm mỡ',
-      code: 'K76.0',
-      category: 'Tiêu hóa',
-      riskLevel: 'medium',
-      biomarkers: ['ALT', 'AST', 'GGT', 'ALP'],
-      description: 'Gan nhiễm mỡ là tình trạng tích tụ mỡ trong tế bào gan, có thể dẫn đến viêm gan và xơ gan.',
+      classification: 'Bệnh gan',
+      description: 'Gan nhiễm mỡ là tình trạng tích tụ mỡ trong tế bào gan...',
       symptoms: ['Mệt mỏi', 'Đau tức vùng gan', 'Khó tiêu'],
-      treatment: 'Giảm cân, tập thể dục, hạn chế rượu bia, điều trị bệnh lý kết hợp.'
-    },
-    {
-      id: 4,
-      name: 'Tăng huyết áp',
-      code: 'I10',
-      category: 'Tim mạch',
-      riskLevel: 'high',
-      biomarkers: ['Sodium', 'Potassium', 'Creatinine'],
-      description: 'Tăng huyết áp là tình trạng áp lực máu trong động mạch cao hơn bình thường.',
-      symptoms: ['Đau đầu', 'Chóng mặt', 'Ù tai', 'Mệt mỏi'],
-      treatment: 'Thay đổi lối sống, thuốc hạ áp, theo dõi thường xuyên.'
+      diagnosis: 'Siêu âm gan, xét nghiệm men gan ALT, AST...',
+      treatment: 'Giảm cân, hạn chế rượu bia, ăn uống lành mạnh...',
+      summary: 'Gan nhiễm mỡ có thể tiến triển thành xơ gan nếu không điều trị kịp thời.'
     }
   ]);
-
-  const getRiskBadge = (level: string) => {
-    switch (level) {
-      case 'high':
-        return <Badge variant="destructive">Nguy cơ cao</Badge>;
-      case 'medium':
-        return <Badge className="bg-orange-100 text-orange-800">Nguy cơ trung bình</Badge>;
-      case 'low':
-        return <Badge className="bg-green-100 text-green-800">Nguy cơ thấp</Badge>;
-      default:
-        return <Badge variant="secondary">Chưa phân loại</Badge>;
-    }
-  };
 
   const filteredDiseases = diseases.filter(disease =>
     disease.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     disease.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    disease.category.toLowerCase().includes(searchTerm.toLowerCase())
+    disease.classification.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleViewDisease = (disease: any, type: 'detail' | 'summary') => {
+    setSelectedDisease(disease);
+    setViewType(type);
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-slate-800">Danh sách bệnh</h2>
+        <h2 className="text-2xl font-bold text-slate-800">Danh mục bệnh</h2>
       </div>
 
       <Card>
@@ -90,7 +71,7 @@ export const DiseaseView = () => {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input
-                placeholder="Tìm kiếm theo tên bệnh, mã ICD, chuyên khoa..."
+                placeholder="Tìm kiếm bệnh..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -99,89 +80,107 @@ export const DiseaseView = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Mã ICD</TableHead>
-                <TableHead>Tên bệnh</TableHead>
-                <TableHead>Chuyên khoa</TableHead>
-                <TableHead>Mức độ nguy cơ</TableHead>
-                <TableHead>Thao tác</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredDiseases.map((disease) => (
-                <TableRow key={disease.id}>
-                  <TableCell className="font-mono">{disease.code}</TableCell>
-                  <TableCell className="font-medium">{disease.name}</TableCell>
-                  <TableCell>{disease.category}</TableCell>
-                  <TableCell>{getRiskBadge(disease.riskLevel)}</TableCell>
-                  <TableCell>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => setSelectedDisease(disease)}
-                    >
-                      <Eye className="h-3 w-3 mr-1" />
-                      Xem chi tiết
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-slate-200">
+                  <th className="text-left p-3 font-medium text-slate-600">Mã bệnh</th>
+                  <th className="text-left p-3 font-medium text-slate-600">Tên bệnh</th>
+                  <th className="text-left p-3 font-medium text-slate-600">Phân loại</th>
+                  <th className="text-right p-3 font-medium text-slate-600">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredDiseases.map((disease) => (
+                  <tr key={disease.id} className="border-b border-slate-100 hover:bg-slate-50">
+                    <td className="p-3">
+                      <div className="font-mono text-sm font-medium text-red-600">{disease.code}</div>
+                    </td>
+                    <td className="p-3">
+                      <div className="font-medium text-slate-800">{disease.name}</div>
+                    </td>
+                    <td className="p-3">
+                      <Badge variant="outline">{disease.classification}</Badge>
+                    </td>
+                    <td className="p-3 text-right">
+                      <div className="flex space-x-2 justify-end">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleViewDisease(disease, 'detail')}
+                        >
+                          <FileText className="h-3 w-3 mr-1" />
+                          Chi tiết
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleViewDisease(disease, 'summary')}
+                        >
+                          <Info className="h-3 w-3 mr-1" />
+                          Tóm tắt
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Disease Detail Dialog */}
+      {/* Disease Detail/Summary Dialog */}
       {selectedDisease && (
         <Dialog open={!!selectedDisease} onOpenChange={() => setSelectedDisease(null)}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{selectedDisease.name}</DialogTitle>
+              <DialogTitle>
+                {viewType === 'detail' ? 'Chi tiết' : 'Tóm tắt'}: {selectedDisease.name}
+              </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              <div>
-                <h4 className="font-medium mb-2">Thông tin cơ bản</h4>
-                <div className="bg-slate-50 p-3 rounded-lg space-y-2">
-                  <div><strong>Mã ICD:</strong> {selectedDisease.code}</div>
-                  <div><strong>Chuyên khoa:</strong> {selectedDisease.category}</div>
-                  <div className="flex items-center"><strong>Mức độ nguy cơ:</strong> <span className="ml-2">{getRiskBadge(selectedDisease.riskLevel)}</span></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <strong>Mã bệnh:</strong> {selectedDisease.code}
+                </div>
+                <div>
+                  <strong>Phân loại:</strong> {selectedDisease.classification}
                 </div>
               </div>
               
-              <div>
-                <h4 className="font-medium mb-2">Mô tả</h4>
-                <p className="text-sm text-slate-700">{selectedDisease.description}</p>
-              </div>
-
-              <div>
-                <h4 className="font-medium mb-2">Triệu chứng thường gặp</h4>
-                <ul className="text-sm text-slate-700 space-y-1">
-                  {selectedDisease.symptoms.map((symptom: string, index: number) => (
-                    <li key={index} className="flex items-start">
-                      <span className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-2 flex-shrink-0"></span>
-                      {symptom}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-medium mb-2">Hướng điều trị</h4>
-                <p className="text-sm text-slate-700">{selectedDisease.treatment}</p>
-              </div>
-
-              <div>
-                <h4 className="font-medium mb-2">Chỉ số sinh học liên quan</h4>
-                <div className="flex flex-wrap gap-2">
-                  {selectedDisease.biomarkers.map((marker: string, index: number) => (
-                    <Badge key={index} variant="outline">
-                      {marker}
-                    </Badge>
-                  ))}
+              {viewType === 'detail' ? (
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-medium mb-2">Mô tả:</h3>
+                    <p className="text-slate-700">{selectedDisease.description}</p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-medium mb-2">Triệu chứng:</h3>
+                    <ul className="list-disc list-inside space-y-1">
+                      {selectedDisease.symptoms.map((symptom: string, index: number) => (
+                        <li key={index} className="text-slate-700">{symptom}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-medium mb-2">Chẩn đoán:</h3>
+                    <p className="text-slate-700">{selectedDisease.diagnosis}</p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-medium mb-2">Điều trị:</h3>
+                    <p className="text-slate-700">{selectedDisease.treatment}</p>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div>
+                  <h3 className="font-medium mb-2">Tóm tắt:</h3>
+                  <p className="text-slate-700">{selectedDisease.summary}</p>
+                </div>
+              )}
             </div>
           </DialogContent>
         </Dialog>

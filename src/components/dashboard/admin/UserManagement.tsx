@@ -21,7 +21,7 @@ export const UserManagement = () => {
       name: 'BS. Nguyễn Văn A',
       phone: '0901234567',
       email: 'bacsi.a@gentis.com',
-      organization: 'Bệnh viện Đa khoa Trung ương',
+      branch: 'Chi nhánh Hà Nội',
       role: 'doctor',
       status: 'active',
       accountCode: 'GEN001'
@@ -31,7 +31,7 @@ export const UserManagement = () => {
       name: 'BS. Trần Thị B',
       phone: '0902345678',
       email: 'bacsi.b@hospital.com',
-      organization: 'Bệnh viện Chợ Rẫy',
+      branch: 'Chi nhánh TP.HCM',
       role: 'collaborator',
       status: 'active',
       accountCode: 'COL001'
@@ -41,7 +41,7 @@ export const UserManagement = () => {
       name: 'BS. Lê Văn C',
       phone: '0903456789',
       email: 'bacsi.c@clinic.com',
-      organization: 'Phòng khám Đa khoa ABC',
+      branch: 'Chi nhánh Đà Nẵng',
       role: 'doctor',
       status: 'inactive',
       accountCode: 'GEN002'
@@ -52,10 +52,10 @@ export const UserManagement = () => {
     const name = formData.get('name') as string;
     const phone = formData.get('phone') as string;
     const email = formData.get('email') as string;
-    const organization = formData.get('organization') as string;
+    const branch = formData.get('branch') as string;
     const role = formData.get('role') as string;
 
-    if (!name || !phone || !email || !organization || !role) {
+    if (!name || !phone || !email || !branch || !role) {
       toast({
         title: "Lỗi",
         description: "Vui lòng điền đầy đủ thông tin",
@@ -74,7 +74,7 @@ export const UserManagement = () => {
       name,
       phone,
       email,
-      organization,
+      branch,
       role,
       status: 'active',
       accountCode
@@ -135,8 +135,17 @@ export const UserManagement = () => {
                 <Input id="email" name="email" type="email" placeholder="Nhập email" required />
               </div>
               <div>
-                <Label htmlFor="organization">Cơ quan công tác *</Label>
-                <Input id="organization" name="organization" placeholder="Nhập tên cơ quan" required />
+                <Label htmlFor="branch">Chi nhánh Gentis *</Label>
+                <Select name="branch" required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn chi nhánh" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Chi nhánh Hà Nội">Chi nhánh Hà Nội</SelectItem>
+                    <SelectItem value="Chi nhánh TP.HCM">Chi nhánh TP.HCM</SelectItem>
+                    <SelectItem value="Chi nhánh Đà Nẵng">Chi nhánh Đà Nẵng</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label htmlFor="role">Vai trò *</Label>
@@ -145,7 +154,7 @@ export const UserManagement = () => {
                     <SelectValue placeholder="Chọn vai trò" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="doctor">Bác sĩ Gentis</SelectItem>
+                    <SelectItem value="doctor">Bác sĩ</SelectItem>
                     <SelectItem value="collaborator">Bác sĩ cộng tác</SelectItem>
                   </SelectContent>
                 </Select>
@@ -181,7 +190,7 @@ export const UserManagement = () => {
                   <th className="text-left p-3 font-medium text-slate-600">Họ tên</th>
                   <th className="text-left p-3 font-medium text-slate-600">Số điện thoại</th>
                   <th className="text-left p-3 font-medium text-slate-600">Email</th>
-                  <th className="text-left p-3 font-medium text-slate-600">Cơ quan</th>
+                  <th className="text-left p-3 font-medium text-slate-600">Chi nhánh</th>
                   <th className="text-left p-3 font-medium text-slate-600">Vai trò</th>
                   <th className="text-left p-3 font-medium text-slate-600">Trạng thái</th>
                   <th className="text-left p-3 font-medium text-slate-600">Thao tác</th>
@@ -198,10 +207,10 @@ export const UserManagement = () => {
                     </td>
                     <td className="p-3 text-slate-600">{user.phone}</td>
                     <td className="p-3 text-slate-600">{user.email}</td>
-                    <td className="p-3 text-slate-600">{user.organization}</td>
+                    <td className="p-3 text-slate-600">{user.branch}</td>
                     <td className="p-3">
                       <Badge variant={user.role === 'doctor' ? 'default' : 'secondary'}>
-                        {user.role === 'doctor' ? 'Bác sĩ Gentis' : 'Bác sĩ cộng tác'}
+                        {user.role === 'doctor' ? 'Bác sĩ' : 'Bác sĩ cộng tác'}
                       </Badge>
                     </td>
                     <td className="p-3">

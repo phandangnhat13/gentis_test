@@ -5,247 +5,73 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, FileText, Search, Upload, Edit, Eye, Save, X, Filter } from 'lucide-react';
+import { Plus, Search, FileText, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-
-interface Disease {
-  id: number;
-  name: string;
-  code: string;
-  category: string;
-  classification: string;
-  hasDescription: boolean;
-  hasSummary: boolean;
-  relatedTests: string[];
-  riskFactors: number;
-  description?: string;
-  summary?: string;
-}
-
-const diseaseClassifications = [
-  'Bệnh tim mạch',
-  'Bệnh nội tiết',
-  'Bệnh chuyển hóa',
-  'Bệnh gan',
-  'Bệnh thận',
-  'Bệnh máu',
-  'Bệnh phổi',
-  'Bệnh tiêu hóa',
-  'Bệnh thần kinh',
-  'Bệnh ung thư'
-];
 
 export const DiseaseManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedClassification, setSelectedClassification] = useState('all');
-  const [editingDisease, setEditingDisease] = useState<Disease | null>(null);
-  const [viewingDisease, setViewingDisease] = useState<Disease | null>(null);
+  const [selectedDisease, setSelectedDisease] = useState<any>(null);
+  const [viewType, setViewType] = useState<'detail' | 'summary'>('detail');
   const { toast } = useToast();
 
-  const [diseases, setDiseases] = useState<Disease[]>([
+  const [diseases] = useState([
     {
       id: 1,
+      code: 'D001',
       name: 'Tiểu đường type 2',
-      code: 'E11',
-      category: 'Bệnh nội tiết',
       classification: 'Bệnh nội tiết',
-      hasDescription: true,
-      hasSummary: true,
-      relatedTests: ['HbA1c', 'Glucose', 'Insulin'],
-      riskFactors: 12,
-      description: 'Tiểu đường type 2 là một rối loạn chuyển hóa mãn tính đặc trưng bởi tình trạng tăng đường huyết do sự kháng insulin và suy giảm chức năng tế bào beta tuyến tụy.',
-      summary: 'Bệnh tiểu đường type 2 phổ biến ở người trưởng thành, có thể kiểm soát được bằng chế độ ăn, vận động và thuốc.'
+      description: 'Bệnh tiểu đường type 2 là một rối loạn chuyển hóa mãn tính...',
+      symptoms: ['Khát nước nhiều', 'Tiểu nhiều', 'Mệt mỏi', 'Sụt cân'],
+      diagnosis: 'Dựa vào xét nghiệm glucose máu đói, HbA1c...',
+      treatment: 'Điều chỉnh chế độ ăn uống, tập thể dục, dùng thuốc...',
+      summary: 'Bệnh tiểu đường type 2 gây ra do tế bào kháng insulin hoặc tuyến tụy không sản xuất đủ insulin.'
     },
     {
       id: 2,
-      name: 'Tăng huyết áp',
-      code: 'I10',
-      category: 'Bệnh tim mạch',
+      code: 'D002',
+      name: 'Rối loạn lipid máu',
       classification: 'Bệnh tim mạch',
-      hasDescription: true,
-      hasSummary: false,
-      relatedTests: ['Systolic BP', 'Diastolic BP'],
-      riskFactors: 8,
-      description: 'Tăng huyết áp là tình trạng áp lực máu trong động mach cao hơn bình thường (≥140/90 mmHg).'
+      description: 'Rối loạn lipid máu là tình trạng bất thường trong nồng độ lipid...',
+      symptoms: ['Thường không có triệu chứng', 'Có thể đau ngực'],
+      diagnosis: 'Xét nghiệm lipid máu, cholesterol total, LDL, HDL...',
+      treatment: 'Thay đổi lối sống, thuốc hạ lipid máu...',
+      summary: 'Rối loạn lipid máu tăng nguy cơ bệnh tim mạch, cần kiểm soát chế độ ăn và dùng thuốc.'
     },
     {
       id: 3,
-      name: 'Rối loạn lipid máu',
-      code: 'E78',
-      category: 'Bệnh chuyển hóa',
-      classification: 'Bệnh chuyển hóa',
-      hasDescription: false,
-      hasSummary: true,
-      relatedTests: ['Total Cholesterol', 'LDL', 'HDL', 'Triglycerides'],
-      riskFactors: 15,
-      summary: 'Rối loạn lipid máu bao gồm tăng cholesterol, LDL và giảm HDL, là yếu tố nguy cơ của bệnh tim mạch.'
-    },
-    {
-      id: 4,
+      code: 'D003', 
       name: 'Gan nhiễm mỡ',
-      code: 'K76.0',
-      category: 'Bệnh gan',
       classification: 'Bệnh gan',
-      hasDescription: true,
-      hasSummary: true,
-      relatedTests: ['ALT', 'AST', 'GGT'],
-      riskFactors: 10,
-      description: 'Gan nhiễm mỡ là tình trạng tích tụ mỡ trong tế bào gan.',
-      summary: 'Bệnh gan nhiễm mỡ có thể điều trị bằng thay đổi lối sống.'
+      description: 'Gan nhiễm mỡ là tình trạng tích tụ mỡ trong tế bào gan...',
+      symptoms: ['Mệt mỏi', 'Đau tức vùng gan', 'Khó tiêu'],
+      diagnosis: 'Siêu âm gan, xét nghiệm men gan ALT, AST...',
+      treatment: 'Giảm cân, hạn chế rượu bia, ăn uống lành mạnh...',
+      summary: 'Gan nhiễm mỡ có thể tiến triển thành xơ gan nếu không điều trị kịp thời.'
     }
   ]);
 
-  const handleAddDisease = (diseaseData: Partial<Disease>) => {
-    const newDisease: Disease = {
-      id: diseases.length + 1,
-      name: diseaseData.name || '',
-      code: diseaseData.code || '',
-      category: diseaseData.category || '',
-      classification: diseaseData.classification || '',
-      hasDescription: false,
-      hasSummary: false,
-      relatedTests: [],
-      riskFactors: 0,
-      ...diseaseData
-    };
-    
-    setDiseases([...diseases, newDisease]);
-    toast({
-      title: "Thêm bệnh mới",
-      description: `Đã thêm bệnh ${newDisease.name} thành công`,
-    });
+  const filteredDiseases = diseases.filter(disease =>
+    disease.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    disease.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    disease.classification.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleViewDisease = (disease: any, type: 'detail' | 'summary') => {
+    setSelectedDisease(disease);
+    setViewType(type);
   };
-
-  const handleEditDisease = (disease: Disease) => {
-    const updatedDiseases = diseases.map(d => 
-      d.id === disease.id ? disease : d
-    );
-    setDiseases(updatedDiseases);
-    setEditingDisease(null);
-    
-    toast({
-      title: "Cập nhật thành công",
-      description: `Đã cập nhật thông tin bệnh ${disease.name}`,
-    });
-  };
-
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>, type: 'csv' | 'description' | 'summary') => {
-    const file = event.target.files?.[0];
-    if (file) {
-      console.log(`File ${type} đã chọn:`, file.name, file.size, file.type);
-      
-      if (type === 'csv') {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const content = e.target?.result as string;
-          console.log('Nội dung CSV:', content.substring(0, 200) + '...');
-          
-          toast({
-            title: "Upload thành công",
-            description: `Đã tải lên file CSV: ${file.name}`,
-          });
-        };
-        reader.readAsText(file);
-      } else {
-        toast({
-          title: "Upload thành công",
-          description: `Đã tải lên file ${type}: ${file.name}`,
-        });
-      }
-    }
-  };
-
-  const filteredDiseases = diseases.filter(disease => {
-    const matchesSearch = disease.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      disease.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      disease.category.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesClassification = selectedClassification === 'all' || disease.classification === selectedClassification;
-    
-    return matchesSearch && matchesClassification;
-  });
-
-  const classificationCounts = diseaseClassifications.reduce((acc, classification) => {
-    acc[classification] = diseases.filter(d => d.classification === classification).length;
-    return acc;
-  }, {} as Record<string, number>);
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-slate-800">Quản lý danh sách bệnh</h2>
-        <div className="flex space-x-3">
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <Upload className="h-4 w-4 mr-2" />
-                Upload file CSV
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Upload file ma trận bệnh</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center">
-                  <Upload className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                  <p className="text-slate-600 mb-2">Kéo thả file CSV hoặc click để chọn</p>
-                  <p className="text-sm text-slate-500">File CSV chứa ma trận bệnh và chỉ số sinh học</p>
-                  <input
-                    type="file"
-                    accept=".csv"
-                    onChange={(e) => handleFileUpload(e, 'csv')}
-                    className="hidden"
-                    id="csv-upload"
-                  />
-                  <label htmlFor="csv-upload">
-                    <Button className="mt-4" asChild>
-                      <span>Chọn file CSV</span>
-                    </Button>
-                  </label>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button className="bg-red-600 hover:bg-red-700">
-                <Plus className="h-4 w-4 mr-2" />
-                Thêm bệnh mới
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Thêm bệnh mới</DialogTitle>
-              </DialogHeader>
-              <AddDiseaseForm onAdd={handleAddDisease} />
-            </DialogContent>
-          </Dialog>
-        </div>
+        <h2 className="text-2xl font-bold text-slate-800">Quản lý bệnh</h2>
+        <Button className="bg-red-600 hover:bg-red-700">
+          <Plus className="h-4 w-4 mr-2" />
+          Thêm bệnh mới
+        </Button>
       </div>
-
-      {/* Classification Statistics */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Filter className="h-5 w-5 mr-2" />
-            Thống kê theo phân loại bệnh
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {diseaseClassifications.map((classification) => (
-              <div key={classification} className="bg-slate-50 p-3 rounded-lg text-center">
-                <div className="text-2xl font-bold text-slate-800">{classificationCounts[classification] || 0}</div>
-                <div className="text-sm text-slate-600">{classification}</div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
 
       <Card>
         <CardHeader>
@@ -253,364 +79,120 @@ export const DiseaseManagement = () => {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input
-                placeholder="Tìm kiếm bệnh theo tên, mã ICD hoặc danh mục..."
+                placeholder="Tìm kiếm bệnh..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
             </div>
-            <Select value={selectedClassification} onValueChange={setSelectedClassification}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Lọc theo phân loại" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả phân loại</SelectItem>
-                {diseaseClassifications.map((classification) => (
-                  <SelectItem key={classification} value={classification}>
-                    {classification} ({classificationCounts[classification] || 0})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Tên bệnh</TableHead>
-                <TableHead>Mã ICD</TableHead>
-                <TableHead>Danh mục</TableHead>
-                <TableHead>Phân loại</TableHead>
-                <TableHead>Tài liệu</TableHead>
-                <TableHead>Yếu tố nguy cơ</TableHead>
-                <TableHead>Thao tác</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredDiseases.map((disease) => (
-                <TableRow key={disease.id}>
-                  <TableCell className="font-medium">{disease.name}</TableCell>
-                  <TableCell>{disease.code}</TableCell>
-                  <TableCell>{disease.category}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="text-xs">
-                      {disease.classification}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-1">
-                      <Badge variant={disease.hasDescription ? 'default' : 'secondary'} className="text-xs">
-                        {disease.hasDescription ? 'Mô tả' : 'Chưa có mô tả'}
-                      </Badge>
-                      <Badge variant={disease.hasSummary ? 'default' : 'secondary'} className="text-xs">
-                        {disease.hasSummary ? 'Tóm tắt' : 'Chưa có tóm tắt'}
-                      </Badge>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-red-600 font-medium">{disease.riskFactors}</span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        onClick={() => setEditingDisease(disease)}
-                      >
-                        <Edit className="h-3 w-3 mr-1" />
-                        Sửa
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        onClick={() => setViewingDisease(disease)}
-                      >
-                        <Eye className="h-3 w-3 mr-1" />
-                        Xem
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-slate-200">
+                  <th className="text-left p-3 font-medium text-slate-600">Mã bệnh</th>
+                  <th className="text-left p-3 font-medium text-slate-600">Tên bệnh</th>
+                  <th className="text-left p-3 font-medium text-slate-600">Phân loại</th>
+                  <th className="text-right p-3 font-medium text-slate-600">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredDiseases.map((disease) => (
+                  <tr key={disease.id} className="border-b border-slate-100 hover:bg-slate-50">
+                    <td className="p-3">
+                      <div className="font-mono text-sm font-medium text-red-600">{disease.code}</div>
+                    </td>
+                    <td className="p-3">
+                      <div className="font-medium text-slate-800">{disease.name}</div>
+                    </td>
+                    <td className="p-3">
+                      <Badge variant="outline">{disease.classification}</Badge>
+                    </td>
+                    <td className="p-3 text-right">
+                      <div className="flex space-x-2 justify-end">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleViewDisease(disease, 'detail')}
+                        >
+                          <FileText className="h-3 w-3 mr-1" />
+                          Chi tiết
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleViewDisease(disease, 'summary')}
+                        >
+                          <Info className="h-3 w-3 mr-1" />
+                          Tóm tắt
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Edit Disease Dialog */}
-      {editingDisease && (
-        <Dialog open={!!editingDisease} onOpenChange={() => setEditingDisease(null)}>
-          <DialogContent>
+      {/* Disease Detail/Summary Dialog */}
+      {selectedDisease && (
+        <Dialog open={!!selectedDisease} onOpenChange={() => setSelectedDisease(null)}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Chỉnh sửa thông tin bệnh</DialogTitle>
+              <DialogTitle>
+                {viewType === 'detail' ? 'Chi tiết' : 'Tóm tắt'}: {selectedDisease.name}
+              </DialogTitle>
             </DialogHeader>
-            <EditDiseaseForm 
-              disease={editingDisease} 
-              onSave={handleEditDisease}
-              onCancel={() => setEditingDisease(null)}
-            />
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <strong>Mã bệnh:</strong> {selectedDisease.code}
+                </div>
+                <div>
+                  <strong>Phân loại:</strong> {selectedDisease.classification}
+                </div>
+              </div>
+              
+              {viewType === 'detail' ? (
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-medium mb-2">Mô tả:</h3>
+                    <p className="text-slate-700">{selectedDisease.description}</p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-medium mb-2">Triệu chứng:</h3>
+                    <ul className="list-disc list-inside space-y-1">
+                      {selectedDisease.symptoms.map((symptom: string, index: number) => (
+                        <li key={index} className="text-slate-700">{symptom}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-medium mb-2">Chẩn đoán:</h3>
+                    <p className="text-slate-700">{selectedDisease.diagnosis}</p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-medium mb-2">Điều trị:</h3>
+                    <p className="text-slate-700">{selectedDisease.treatment}</p>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <h3 className="font-medium mb-2">Tóm tắt:</h3>
+                  <p className="text-slate-700">{selectedDisease.summary}</p>
+                </div>
+              )}
+            </div>
           </DialogContent>
         </Dialog>
       )}
-
-      {/* View Disease Dialog */}
-      {viewingDisease && (
-        <Dialog open={!!viewingDisease} onOpenChange={() => setViewingDisease(null)}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Thông tin chi tiết: {viewingDisease.name}</DialogTitle>
-            </DialogHeader>
-            <ViewDiseaseDetails disease={viewingDisease} />
-          </DialogContent>
-        </Dialog>
-      )}
-    </div>
-  );
-};
-
-// Add Disease Form Component
-const AddDiseaseForm = ({ onAdd }: { onAdd: (disease: Partial<Disease>) => void }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    code: '',
-    category: '',
-    classification: '',
-    description: '',
-    summary: ''
-  });
-
-  const handleSubmit = () => {
-    if (formData.name && formData.code && formData.category && formData.classification) {
-      onAdd({
-        ...formData,
-        hasDescription: !!formData.description,
-        hasSummary: !!formData.summary,
-        relatedTests: [],
-        riskFactors: 0
-      });
-      setFormData({ name: '', code: '', category: '', classification: '', description: '', summary: '' });
-    }
-  };
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium mb-1">Tên bệnh</label>
-        <Input 
-          placeholder="Nhập tên bệnh" 
-          value={formData.name}
-          onChange={(e) => setFormData({...formData, name: e.target.value})}
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium mb-1">Mã ICD</label>
-        <Input 
-          placeholder="Nhập mã ICD" 
-          value={formData.code}
-          onChange={(e) => setFormData({...formData, code: e.target.value})}
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium mb-1">Danh mục</label>
-        <Input 
-          placeholder="Nhập danh mục bệnh" 
-          value={formData.category}
-          onChange={(e) => setFormData({...formData, category: e.target.value})}
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium mb-1">Phân loại bệnh</label>
-        <Select value={formData.classification} onValueChange={(value) => setFormData({...formData, classification: value})}>
-          <SelectTrigger>
-            <SelectValue placeholder="Chọn phân loại bệnh" />
-          </SelectTrigger>
-          <SelectContent>
-            {diseaseClassifications.map((classification) => (
-              <SelectItem key={classification} value={classification}>
-                {classification}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div>
-        <label className="block text-sm font-medium mb-1">Mô tả bệnh (tùy chọn)</label>
-        <Textarea 
-          placeholder="Nhập mô tả chi tiết về bệnh" 
-          value={formData.description}
-          onChange={(e) => setFormData({...formData, description: e.target.value})}
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium mb-1">Tóm tắt bệnh (tùy chọn)</label>
-        <Textarea 
-          placeholder="Nhập tóm tắt ngắn gọn về bệnh" 
-          value={formData.summary}
-          onChange={(e) => setFormData({...formData, summary: e.target.value})}
-        />
-      </div>
-      <Button 
-        className="w-full bg-red-600 hover:bg-red-700"
-        onClick={handleSubmit}
-        disabled={!formData.name || !formData.code || !formData.category || !formData.classification}
-      >
-        Thêm bệnh
-      </Button>
-    </div>
-  );
-};
-
-// Edit Disease Form Component
-const EditDiseaseForm = ({ 
-  disease, 
-  onSave, 
-  onCancel 
-}: { 
-  disease: Disease; 
-  onSave: (disease: Disease) => void; 
-  onCancel: () => void; 
-}) => {
-  const [formData, setFormData] = useState(disease);
-
-  const handleSave = () => {
-    onSave({
-      ...formData,
-      hasDescription: !!formData.description,
-      hasSummary: !!formData.summary
-    });
-  };
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium mb-1">Tên bệnh</label>
-        <Input 
-          value={formData.name}
-          onChange={(e) => setFormData({...formData, name: e.target.value})}
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium mb-1">Mã ICD</label>
-        <Input 
-          value={formData.code}
-          onChange={(e) => setFormData({...formData, code: e.target.value})}
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium mb-1">Danh mục</label>
-        <Input 
-          value={formData.category}
-          onChange={(e) => setFormData({...formData, category: e.target.value})}
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium mb-1">Phân loại bệnh</label>
-        <Select value={formData.classification} onValueChange={(value) => setFormData({...formData, classification: value})}>
-          <SelectTrigger>
-            <SelectValue placeholder="Chọn phân loại bệnh" />
-          </SelectTrigger>
-          <SelectContent>
-            {diseaseClassifications.map((classification) => (
-              <SelectItem key={classification} value={classification}>
-                {classification}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div>
-        <label className="block text-sm font-medium mb-1">Mô tả bệnh</label>
-        <Textarea 
-          value={formData.description || ''}
-          onChange={(e) => setFormData({...formData, description: e.target.value})}
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium mb-1">Tóm tắt bệnh</label>
-        <Textarea 
-          value={formData.summary || ''}
-          onChange={(e) => setFormData({...formData, summary: e.target.value})}
-        />
-      </div>
-      <div className="flex space-x-2">
-        <Button 
-          className="flex-1 bg-red-600 hover:bg-red-700"
-          onClick={handleSave}
-        >
-          <Save className="h-4 w-4 mr-2" />
-          Lưu thay đổi
-        </Button>
-        <Button 
-          variant="outline"
-          className="flex-1"
-          onClick={onCancel}
-        >
-          <X className="h-4 w-4 mr-2" />
-          Hủy
-        </Button>
-      </div>
-    </div>
-  );
-};
-
-// View Disease Details Component
-const ViewDiseaseDetails = ({ disease }: { disease: Disease }) => {
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-slate-600">Tên bệnh</label>
-          <p className="font-medium">{disease.name}</p>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-600">Mã ICD</label>
-          <p className="font-medium">{disease.code}</p>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-slate-600">Danh mục</label>
-          <p className="font-medium">{disease.category}</p>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-600">Phân loại</label>
-          <Badge variant="outline">{disease.classification}</Badge>
-        </div>
-      </div>
-
-      {disease.description && (
-        <div>
-          <label className="block text-sm font-medium text-slate-600">Mô tả chi tiết</label>
-          <div className="bg-slate-50 p-3 rounded-lg">
-            <p className="text-sm">{disease.description}</p>
-          </div>
-        </div>
-      )}
-
-      {disease.summary && (
-        <div>
-          <label className="block text-sm font-medium text-slate-600">Tóm tắt</label>
-          <div className="bg-blue-50 p-3 rounded-lg">
-            <p className="text-sm">{disease.summary}</p>
-          </div>
-        </div>
-      )}
-
-      <div>
-        <label className="block text-sm font-medium text-slate-600">Chỉ số sinh học liên quan</label>
-        <div className="flex flex-wrap gap-2 mt-1">
-          {disease.relatedTests.map((test, index) => (
-            <Badge key={index} variant="outline">{test}</Badge>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-slate-600">Số yếu tố nguy cơ</label>
-        <p className="font-medium text-red-600">{disease.riskFactors} yếu tố</p>
-      </div>
     </div>
   );
 };
