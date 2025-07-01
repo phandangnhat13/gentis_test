@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -56,7 +55,6 @@ interface DoctorDashboardProps {
 const menuItems = [
   { id: 'patients', label: 'Quản lý bệnh nhân', icon: Users },
   { id: 'tests', label: 'Quản lý xét nghiệm', icon: TestTube },
-  { id: 'results', label: 'Xem kết quả', icon: Eye },
   { id: 'analysis', label: 'Phân tích số liệu', icon: BarChart3 },
   { id: 'batch', label: 'Phân tích hàng loạt', icon: Database },
   { id: 'diseases', label: 'Danh mục bệnh', icon: BookOpen },
@@ -71,13 +69,13 @@ const DoctorSidebar = ({ activeTab, setActiveTab, userRole }: {
   let filteredMenuItems;
   
   if (userRole === 'collaborator') {
-    // Collaborator menu: patients, results (view only), diseases, profile
+    // Collaborator menu: patients, tests (view only), diseases, profile
     filteredMenuItems = menuItems.filter(item => 
-      ['patients', 'results', 'diseases', 'profile'].includes(item.id)
+      ['patients', 'tests', 'diseases', 'profile'].includes(item.id)
     );
   } else {
-    // Doctor menu: all except results (they use tests instead)
-    filteredMenuItems = menuItems.filter(item => item.id !== 'results');
+    // Doctor menu: all items
+    filteredMenuItems = menuItems;
   }
 
   return (
@@ -118,20 +116,11 @@ export const DoctorDashboard = ({ user, onLogout }: DoctorDashboardProps) => {
       case 'patients':
         return <PatientManagement userRole={user.role} />;
       case 'tests':
-        // Use enhanced test management for Gentis role
+        // Use enhanced test management for Gentis role, regular test management for collaborators
         return user.role === 'doctor' ? (
           <GentisTestManagement />
         ) : (
           <TestManagement userRole={user.role} />
-        );
-      case 'results':
-        // Special view for collaborators - read-only test results
-        return user.role === 'collaborator' ? (
-          <CollaboratorResultsView />
-        ) : (
-          <div className="text-center py-12">
-            <p className="text-slate-600">Trang này không có sẵn cho vai trò này</p>
-          </div>
         );
       case 'analysis':
         return user.role !== 'collaborator' ? (
@@ -219,59 +208,5 @@ export const DoctorDashboard = ({ user, onLogout }: DoctorDashboardProps) => {
         </SidebarInset>
       </div>
     </SidebarProvider>
-  );
-};
-
-// Component for collaborator results view
-const CollaboratorResultsView = () => {
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-slate-800">Xem kết quả xét nghiệm</h2>
-        <div className="text-sm text-slate-600">
-          Chế độ xem chỉ đọc - Bác sĩ cộng tác
-        </div>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Kết quả xét nghiệm của bệnh nhân được phân công</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h3 className="font-medium text-blue-800 mb-2">Lưu ý quan trọng:</h3>
-              <ul className="text-sm text-blue-700 space-y-1">
-                <li>• Bạn chỉ có thể xem kết quả của các bệnh nhân được phân công cho tài khoản của mình</li>
-                <li>• Tất cả dữ liệu hiển thị ở chế độ chỉ đọc</li>
-                <li>• Bạn có thể xuất báo cáo nhưng không thể chỉnh sửa kết quả</li>
-                <li>• Để xem chi tiết từng bệnh nhân, vui lòng sử dụng trang "Quản lý bệnh nhân"</li>
-              </ul>
-            </div>
-            
-            <div className="text-center py-8">
-              <Eye className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-slate-800 mb-2">
-                Xem kết quả chi tiết
-              </h3>
-              <p className="text-slate-600 mb-4">
-                Vui lòng chuyển sang trang "Quản lý bệnh nhân" để xem kết quả chi tiết của từng bệnh nhân
-              </p>
-              <div className="bg-slate-50 p-4 rounded-lg">
-                <p className="text-sm text-slate-600">
-                  Trong trang quản lý bệnh nhân, bạn sẽ thấy:
-                </p>
-                <ul className="text-sm text-slate-600 mt-2 space-y-1">
-                  <li>• Bảng kết quả xét nghiệm chi tiết</li>
-                  <li>• Nhận định của bác sĩ Gentis</li>
-                  <li>• Chỉ số sinh học và đánh giá</li>
-                  <li>• Khuyến nghị điều trị</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
   );
 };

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,7 +18,8 @@ const defaultBiomarkers = [
   'GGT', 'Amylase', 'Lipase', 'CK', 'LDH', 'Troponin', 'BNP', 'CRP', 'ESR', 'Prothrombin Time', 'PTT',
   'INR', 'Fibrinogen', 'D-Dimer', 'Homocysteine', 'Uric Acid', 'Lactate', 'Ketones', 'Microalbumin', 'Protein (Urine)',
   'Glucose (Urine)', 'Specific Gravity', 'pH (Urine)', 'Nitrites', 'Leukocyte Esterase', 'Blood (Urine)', 'Bacteria', 'Epithelial Cells',
-  'RBC (Urine)', 'WBC (Urine)', 'Casts', 'Crystals', 'Mucus', 'Yeast', 'Parasites', 'Other'
+  'RBC (Urine)', 'WBC (Urine)', 'Casts', 'Crystals', 'Mucus', 'Yeast', 'Parasites', 'Other', 'Additional Test 1', 'Additional Test 2',
+  'Additional Test 3', 'Additional Test 4', 'Additional Test 5', 'Additional Test 6', 'Additional Test 7'
 ];
 
 export const GentisTestManagement = () => {
@@ -29,7 +29,7 @@ export const GentisTestManagement = () => {
   const { toast } = useToast();
   
   // Enhanced test data with detailed biomarkers
-  const [tests] = useState([
+  const [tests, setTests] = useState([
     {
       id: 1,
       code: 'XN_240115_001',
@@ -74,7 +74,7 @@ export const GentisTestManagement = () => {
     for (let i = 1; i <= 77; i++) {
       data.push({
         id: i,
-        name: defaultBiomarkers[i - 1] || `Chỉ số ${i}`,
+        name: defaultBiomarkers[i - 1] || ``,
         result: '',
         referenceRange: '',
         assessment: ''
@@ -135,15 +135,40 @@ export const GentisTestManagement = () => {
       return;
     }
 
+    // Create new test from manual data
+    const filledData = manualTestData.filter(item => item.result || item.referenceRange || item.assessment || item.name);
+    
+    const newTest = {
+      id: tests.length + 1,
+      code: `XN_${new Date().toISOString().slice(0, 10).replace(/-/g, '')}_${String(tests.length + 1).padStart(3, '0')}`,
+      name: testName,
+      date: new Date().toISOString().slice(0, 10),
+      samples: 1,
+      status: 'processing',
+      riskSamples: 0,
+      processingTime: '0m',
+      suggestedDiseases: [],
+      detailedBiomarkers: filledData.map(item => ({
+        name: item.name || `Chỉ số ${item.id}`,
+        values: [item.result || 'N/A'],
+        normal: item.referenceRange || 'N/A',
+        unit: '',
+        assessment: item.assessment || 'Chưa đánh giá'
+      })),
+      patientCodes: ['PT_NEW_001']
+    };
+
+    setTests(prev => [...prev, newTest]);
+    
     console.log('Tạo xét nghiệm mới từ dữ liệu nhập tay:', {
       name: testName,
       description: description,
-      data: manualTestData.filter(item => item.result || item.referenceRange || item.assessment)
+      data: filledData
     });
     
     toast({
       title: "Xét nghiệm đã được tạo",
-      description: `Xét nghiệm "${testName}" đã được tạo với ${manualTestData.filter(item => item.result || item.referenceRange || item.assessment).length} chỉ số`,
+      description: `Xét nghiệm "${testName}" đã được tạo với ${filledData.length} chỉ số`,
     });
     
     // Reset manual data
@@ -236,14 +261,14 @@ export const GentisTestManagement = () => {
                 Tạo xét nghiệm mới
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Tạo xét nghiệm mới</DialogTitle>
               </DialogHeader>
               <Tabs defaultValue="file" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="file">Tải file lên</TabsTrigger>
-                  <TabsTrigger value="manual" onClick={initializeManualTestData}>Nhập tay</TabsTrigger>
+                  <TabsTrigger value="manual" onClick={initializeManualTestData}>Nhập kết quả chi tiết</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="file">
@@ -321,7 +346,7 @@ export const GentisTestManagement = () => {
                     </div>
                     
                     <div className="border rounded-lg p-4">
-                      <h3 className="font-medium mb-3">Nhập 77 chỉ số xét nghiệm</h3>
+                      <h3 className="font-medium mb-3">Nhập kết quả chi tiết</h3>
                       <div className="max-h-96 overflow-y-auto">
                         <Table>
                           <TableHeader>
@@ -429,10 +454,12 @@ export const GentisTestManagement = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="bg-blue-50 p-3 rounded-lg">
-                    <p className="text-sm font-medium text-blue-800 mb-1">Bệnh được gợi ý:</p>
-                    <p className="text-sm text-blue-700">{test.suggestedDiseases.join(', ')}</p>
-                  </div>
+                  {test.suggestedDiseases.length > 0 && (
+                    <div className="bg-blue-50 p-3 rounded-lg">
+                      <p className="text-sm font-medium text-blue-800 mb-1">Bệnh được gợi ý:</p>
+                      <p className="text-sm text-blue-700">{test.suggestedDiseases.join(', ')}</p>
+                    </div>
+                  )}
 
                   {/* Detailed Biomarker Table */}
                   <div>
@@ -469,7 +496,7 @@ export const GentisTestManagement = () => {
                               </TableCell>
                               <TableCell>
                                 <Badge variant={test.riskSamples > 0 ? "destructive" : "secondary"} className="text-xs">
-                                  {test.riskSamples > 0 ? "Có bất thường" : "Bình thường"}
+                                  {(biomarker as any).assessment || (test.riskSamples > 0 ? "Có bất thường" : "Bình thường")}
                                 </Badge>
                               </TableCell>
                               {biomarker.values.slice(0, 6).map((value, valIndex) => {
