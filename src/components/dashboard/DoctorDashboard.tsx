@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -62,7 +61,6 @@ const menuItems = [
 
 const collaboratorMenuItems = [
   { id: 'tests-result', label: 'Quản lý xét nghiệm', icon: Users },
-  { id: 'tests', label: 'Xem xét nghiệm', icon: TestTube },
   { id: 'diseases', label: 'Danh mục bệnh', icon: BookOpen },
   { id: 'profile', label: 'Hồ sơ cá nhân', icon: Settings },
 ];
@@ -123,7 +121,7 @@ export const DoctorDashboard = ({ user, onLogout }: DoctorDashboardProps) => {
           <DataAnalysis />
         ) : (
           <div className="text-center py-12">
-            <p className="text-slate-600">Bác sĩ cộng tác không có quyền truy cập chức năng này</p>
+            <p className="text-slate-600">Gentis không có quyền truy cập chức năng này</p>
           </div>
         );
       case 'diseases':
@@ -140,7 +138,7 @@ export const DoctorDashboard = ({ user, onLogout }: DoctorDashboardProps) => {
       case 'doctor':
         return 'Bác sĩ';
       case 'collaborator':
-        return 'Bác sĩ cộng tác';
+        return 'Gentis';
       case 'admin':
         return 'Quản trị viên';
       default:

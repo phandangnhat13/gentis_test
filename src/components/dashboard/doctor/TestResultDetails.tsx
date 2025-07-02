@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Download, FileText, Calendar, User, Phone, MapPin, Activity, Info } from 'lucide-react';
+import { Download, FileText, Calendar, User, Phone, MapPin, Activity, Info, Stethoscope } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { BIOMARKER_LIST, generateDefaultBiomarkers } from '@/data/biomarkers';
 
@@ -36,6 +36,9 @@ export const TestResultDetails = ({ testResult, userRole }: TestResultDetailsPro
   const [diseaseViewType, setDiseaseViewType] = useState<'detail' | 'summary'>('detail');
   const { toast } = useToast();
   const isCollaborator = userRole === 'collaborator';
+
+  // Mock doctor phone for the test result
+  const doctorPhone = '0901234567';
 
   // Mock disease data matching your disease list
   const diseaseInfo = {
@@ -83,11 +86,24 @@ export const TestResultDetails = ({ testResult, userRole }: TestResultDetailsPro
   };
 
   const handleDownloadReport = () => {
+    // Get high and low biomarkers for analysis
+    const highBiomarkers = BIOMARKER_LIST.filter(biomarker => {
+      const key = biomarker.code.toLowerCase();
+      const marker = fullBiomarkers[key];
+      return marker.status === 'high';
+    });
+
+    const lowBiomarkers = BIOMARKER_LIST.filter(biomarker => {
+      const key = biomarker.code.toLowerCase();
+      const marker = fullBiomarkers[key];
+      return marker.status === 'low';
+    });
+
     const reportContent = `
       BÁO CÁO XÉT NGHIỆM CHI TIẾT
       ============================
       
-      THÔNG TIN XÉT NGHIỆM:
+      A. THÔNG TIN XÉT NGHIỆM:
       - Mã xét nghiệm: ${testResult.testCode}
       - Họ tên: ${testResult.patientName}
       - Ngày sinh: ${testResult.birthDate}
@@ -95,12 +111,9 @@ export const TestResultDetails = ({ testResult, userRole }: TestResultDetailsPro
       - Chi nhánh: ${testResult.branch}
       - Ngày xét nghiệm: ${testResult.testDate}
       - Ngày phân tích: ${testResult.analysisDate}
+      - Bác sĩ phụ trách: ${doctorPhone}
       
-      KẾT QUẢ VÀ CHẨN ĐOÁN:
-      - Kết quả: ${testResult.result === 'positive' ? 'Dương tính' : 'Âm tính'}
-      - Chẩn đoán: ${testResult.diagnosis}
-      
-      CHỈ SỐ SINH HỌC CHI TIẾT (77 CHỈ SỐ):
+      B. CHI TIẾT 77 CHỈ SỐ SINH HỌC:
       ${BIOMARKER_LIST.map(biomarker => {
         const key = biomarker.code.toLowerCase();
         const marker = fullBiomarkers[key];
@@ -108,13 +121,34 @@ export const TestResultDetails = ({ testResult, userRole }: TestResultDetailsPro
           Nhận định: ${marker.status === 'high' ? 'Tăng' : marker.status === 'low' ? 'Giảm' : 'Trong ngưỡng'}`;
       }).join('\n      ')}
       
-      KẾT LUẬN BÁC SĨ:
+      C. KẾT QUẢ PHÂN TÍCH:
+      
+      DANH SÁCH CÁC CHỈ SỐ TĂNG:
+      ${highBiomarkers.length > 0 ? highBiomarkers.map(biomarker => {
+        const key = biomarker.code.toLowerCase();
+        const marker = fullBiomarkers[key];
+        return `- ${biomarker.name}: ${marker.value} (BT: ${marker.normal})`;
+      }).join('\n      ') : '      Không có chỉ số nào tăng cao'}
+      
+      DANH SÁCH CÁC CHỈ SỐ GIẢM:
+      ${lowBiomarkers.length > 0 ? lowBiomarkers.map(biomarker => {
+        const key = biomarker.code.toLowerCase();
+        const marker = fullBiomarkers[key];
+        return `- ${biomarker.name}: ${marker.value} (BT: ${marker.normal})`;
+      }).join('\n      ') : '      Không có chỉ số nào giảm thấp'}
+      
+      D. KẾT QUẢ CHẨN ĐOÁN:
+      - Kết quả xét nghiệm: ${testResult.result === 'positive' ? 'Dương tính' : 'Âm tính'}
+      - Chẩn đoán: ${testResult.diagnosis}
+      ${testResult.diseaseCode ? `- Mã bệnh: ${testResult.diseaseCode}` : ''}
+      
+      E. KẾT LUẬN CỦA BÁC SĨ:
       ${testResult.doctorConclusion || 'Chưa có kết luận từ bác sĩ'}
       
       ============================
       Báo cáo được tạo bởi: SLSS Gentis
       Ngày tạo: ${new Date().toLocaleString('vi-VN')}
-      Bác sĩ: ${userRole === 'collaborator' ? 'Bác sĩ cộng tác' : 'Bác sĩ'}
+      Bác sĩ: ${userRole === 'collaborator' ? 'Gentis' : 'Bác sĩ'}
     `;
 
     const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
@@ -164,6 +198,11 @@ export const TestResultDetails = ({ testResult, userRole }: TestResultDetailsPro
                 <Phone className="h-4 w-4 mr-2 text-slate-400" />
                 <span className="font-medium text-slate-600 w-32">Số điện thoại:</span>
                 <span>{testResult.phone}</span>
+              </div>
+              <div className="flex items-center">
+                <Stethoscope className="h-4 w-4 mr-2 text-slate-400" />
+                <span className="font-medium text-slate-600 w-32">SĐT bác sĩ:</span>
+                <span>{doctorPhone}</span>
               </div>
             </div>
             <div className="space-y-3">
