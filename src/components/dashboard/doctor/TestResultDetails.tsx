@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -38,21 +37,21 @@ export const TestResultDetails = ({ testResult, userRole }: TestResultDetailsPro
   const isCollaborator = userRole === 'collaborator';
 
   // Mock doctor phone for the test result
-  const doctorPhone = '0901234567';
+  const doctorPhone = '0987 654 321';
 
   // Mock additional patient data
   const additionalPatientData = {
-    gender: 'Nam',
+    gender: 'Nữ',
     gestationalAge: 39, // weeks
-    birthWeight: 3200, // grams
-    twinStatus: 'đơn', // đôi/đơn
-    ivfStatus: 'không', // có/không
-    address: '123 Đường ABC, Quận 1, TP.HCM',
-    antibioticUse: 'không', // có/không
-    breastfeeding: 'có', // có/không
-    sampleCode: 'MU_' + testResult.testCode,
-    sampleCollectionDate: '2024-01-14',
-    sampleReceiptDate: '2024-01-14'
+    birthWeight: 3800, // grams
+    twinStatus: 'Sinh đơn', // đôi/đơn
+    ivfStatus: 'Có', // có/không
+    address: 'Hà Nội',
+    antibioticUse: 'Không', // có/không
+    breastfeeding: 'Có', // có/không
+    sampleCode: 'y12345678',
+    sampleCollectionDate: '03/05/2025',
+    sampleReceiptDate: '03/05/2025'
   };
 
   // Mock disease data matching your disease list
@@ -206,98 +205,123 @@ export const TestResultDetails = ({ testResult, userRole }: TestResultDetailsPro
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-3">
-              <div className="flex items-center">
-                <span className="font-medium text-slate-600 w-48">Mã xét nghiệm:</span>
-                <span className="font-mono text-red-600 font-medium">{testResult.testCode}</span>
-              </div>
-              <div className="flex items-center">
-                <span className="font-medium text-slate-600 w-48">Họ và tên:</span>
-                <span className="font-medium">{testResult.patientName}</span>
-              </div>
-              <div className="flex items-center">
-                <span className="font-medium text-slate-600 w-48">Ngày sinh:</span>
-                <span>{testResult.birthDate}</span>
-              </div>
-              <div className="flex items-center">
-                <span className="font-medium text-slate-600 w-48">Giới tính:</span>
-                <span>{additionalPatientData.gender}</span>
-              </div>
-              <div className="flex items-center">
-                <span className="font-medium text-slate-600 w-48">Số tuổi thai lúc sinh:</span>
-                <span>{additionalPatientData.gestationalAge} tuần ({additionalPatientData.gestationalAge < 38 ? 'thiếu' : 'đủ'})</span>
-              </div>
-              <div className="flex items-center">
-                <span className="font-medium text-slate-600 w-48">Cân nặng lúc sinh:</span>
-                <span>{additionalPatientData.birthWeight}g</span>
-              </div>
-              <div className="flex items-center">
-                <span className="font-medium text-slate-600 w-48">Sinh đôi/sinh đơn:</span>
-                <span>{additionalPatientData.twinStatus}</span>
-              </div>
-              <div className="flex items-center">
-                <span className="font-medium text-slate-600 w-48">Thai IVF:</span>
-                <span>{additionalPatientData.ivfStatus}</span>
-              </div>
-              <div className="flex items-center">
-                <MapPin className="h-4 w-4 mr-2 text-slate-400" />
-                <span className="font-medium text-slate-600 w-48">Địa chỉ:</span>
-                <span>{additionalPatientData.address}</span>
+          <div className="space-y-6">
+            {/* Thông tin bệnh nhi */}
+            <div>
+              <h3 className="text-lg font-semibold text-blue-600 mb-4 flex items-center">
+                🔹 THÔNG TIN BỆNH NHI
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-4">
+                <div className="space-y-3">
+                  <div>
+                    <span className="font-medium text-slate-700">Họ và tên:</span>
+                    <span className="ml-2 font-medium">{testResult.patientName}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-slate-700">Ngày sinh:</span>
+                    <span className="ml-2">{testResult.birthDate}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-slate-700">Giới tính:</span>
+                    <span className="ml-2">{additionalPatientData.gender}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-slate-700">Số tuổi thai lúc sinh:</span>
+                    <span className="ml-2">
+                      {additionalPatientData.gestationalAge >= 38 ? 'Đủ tháng' : 'Thiếu tháng'} 
+                      ({additionalPatientData.gestationalAge >= 38 ? '≥' : '<'} 38 tuần)
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-slate-700">Cân nặng lúc sinh:</span>
+                    <span className="ml-2">{additionalPatientData.birthWeight}g</span>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <span className="font-medium text-slate-700">Sinh đôi/đơn:</span>
+                    <span className="ml-2">{additionalPatientData.twinStatus}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-slate-700">Thai IVF:</span>
+                    <span className="ml-2">{additionalPatientData.ivfStatus}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-slate-700">Địa chỉ:</span>
+                    <span className="ml-2">{additionalPatientData.address}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-slate-700">Số điện thoại bố/mẹ:</span>
+                    <span className="ml-2">{testResult.phone}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-slate-700">Số điện thoại bác sĩ chỉ định:</span>
+                    <span className="ml-2">{doctorPhone}</span>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="space-y-3">
-              <div className="flex items-center">
-                <span className="font-medium text-slate-600 w-48">Tình trạng dùng kháng sinh:</span>
-                <span>{additionalPatientData.antibioticUse}</span>
+
+            {/* Thông tin dinh dưỡng & điều trị */}
+            <div>
+              <h3 className="text-lg font-semibold text-green-600 mb-4 flex items-center">
+                🔹 THÔNG TIN DINH DƯỠNG & ĐIỀU TRỊ
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-4">
+                <div>
+                  <span className="font-medium text-slate-700">Tình trạng dùng kháng sinh:</span>
+                  <span className="ml-2">{additionalPatientData.antibioticUse}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-slate-700">Dùng sữa mẹ:</span>
+                  <span className="ml-2">{additionalPatientData.breastfeeding}</span>
+                </div>
               </div>
-              <div className="flex items-center">
-                <span className="font-medium text-slate-600 w-48">Dùng sữa mẹ:</span>
-                <span>{additionalPatientData.breastfeeding}</span>
-              </div>
-              <div className="flex items-center">
-                <span className="font-medium text-slate-600 w-48">Mã số mẫu:</span>
-                <span className="font-mono">{additionalPatientData.sampleCode}</span>
-              </div>
-              <div className="flex items-center">
-                <Calendar className="h-4 w-4 mr-2 text-slate-400" />
-                <span className="font-medium text-slate-600 w-48">Ngày lấy mẫu:</span>
-                <span>{additionalPatientData.sampleCollectionDate}</span>
-              </div>
-              <div className="flex items-center">
-                <Calendar className="h-4 w-4 mr-2 text-slate-400" />
-                <span className="font-medium text-slate-600 w-48">Ngày nhận mẫu:</span>
-                <span>{additionalPatientData.sampleReceiptDate}</span>
-              </div>
-              <div className="flex items-center">
-                <Calendar className="h-4 w-4 mr-2 text-slate-400" />
-                <span className="font-medium text-slate-600 w-48">Ngày xét nghiệm:</span>
-                <span>{testResult.testDate}</span>
-              </div>
-              <div className="flex items-center">
-                <Calendar className="h-4 w-4 mr-2 text-slate-400" />
-                <span className="font-medium text-slate-600 w-48">Ngày phân tích:</span>
-                <span>{testResult.analysisDate}</span>
-              </div>
-              <div className="flex items-center">
-                <Phone className="h-4 w-4 mr-2 text-slate-400" />
-                <span className="font-medium text-slate-600 w-48">Số điện thoại:</span>
-                <span>{testResult.phone}</span>
-              </div>
-              <div className="flex items-center">
-                <Stethoscope className="h-4 w-4 mr-2 text-slate-400" />
-                <span className="font-medium text-slate-600 w-48">Số điện thoại bác sĩ:</span>
-                <span>{doctorPhone}</span>
-              </div>
-              <div className="flex items-center">
-                <span className="font-medium text-slate-600 w-48">Kết quả:</span>
-                <Badge variant={testResult.result === 'positive' ? "destructive" : "secondary"}>
-                  {testResult.result === 'positive' ? 'Dương tính' : 'Âm tính'}
-                </Badge>
+            </div>
+
+            {/* Thông tin xét nghiệm */}
+            <div>
+              <h3 className="text-lg font-semibold text-purple-600 mb-4 flex items-center">
+                🔹 THÔNG TIN XÉT NGHIỆM
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-4">
+                <div className="space-y-3">
+                  <div>
+                    <span className="font-medium text-slate-700">Mã xét nghiệm:</span>
+                    <span className="ml-2 font-mono text-red-600 font-medium">{testResult.testCode}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-slate-700">Mã số mẫu:</span>
+                    <span className="ml-2 font-mono">{additionalPatientData.sampleCode}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-slate-700">Ngày lấy mẫu:</span>
+                    <span className="ml-2">{additionalPatientData.sampleCollectionDate}</span>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <span className="font-medium text-slate-700">Ngày nhận mẫu:</span>
+                    <span className="ml-2">{additionalPatientData.sampleReceiptDate}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-slate-700">Ngày xét nghiệm:</span>
+                    <span className="ml-2">{testResult.testDate}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-slate-700">Kết quả:</span>
+                    <span className="ml-2">
+                      <Badge variant={testResult.result === 'positive' ? "destructive" : "secondary"}>
+                        {testResult.result === 'positive' ? 'Dương tính' : 'Âm tính'}
+                      </Badge>
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-          <div className="mt-4 pt-4 border-t flex justify-between items-center">
+
+          <div className="mt-6 pt-4 border-t flex justify-between items-center">
             <div className="flex space-x-2">
               {!isCollaborator && (
                 <Button onClick={handleReAnalyze} variant="outline">
