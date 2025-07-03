@@ -41,7 +41,7 @@ export const TestResultDetails = ({ testResult, userRole }: TestResultDetailsPro
 
   // Mock additional patient data based on test code
   const getAdditionalPatientData = () => {
-    if (testResult.testCode === 'XN_240115_001') {
+    if (testResult.testCode === 'y12345678') {
       return {
         gender: 'Nữ',
         gestationalAge: 39, // weeks
@@ -66,7 +66,7 @@ export const TestResultDetails = ({ testResult, userRole }: TestResultDetailsPro
       address: 'Hà Nội',
       antibioticUse: 'Không', // có/không
       breastfeeding: 'Có', // có/không
-      sampleCode: 'y12345678',
+      sampleCode: testResult.testCode,
       sampleCollectionDate: '03/05/2025',
       sampleReceiptDate: '03/05/2025'
     };
@@ -138,7 +138,7 @@ export const TestResultDetails = ({ testResult, userRole }: TestResultDetailsPro
       ============================
       
       A. THÔNG TIN XÉT NGHIỆM:
-      - Mã xét nghiệm: ${testResult.testCode}
+      - Mã số mẫu: ${testResult.testCode}
       - Họ tên: ${testResult.patientName}
       - Ngày sinh: ${testResult.birthDate}
       - Giới tính: ${additionalPatientData.gender}
@@ -307,23 +307,19 @@ export const TestResultDetails = ({ testResult, userRole }: TestResultDetailsPro
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-4">
                 <div className="space-y-3">
                   <div>
-                    <span className="font-medium text-slate-700">Mã xét nghiệm:</span>
-                    <span className="ml-2 font-mono text-red-600 font-medium">{testResult.testCode}</span>
-                  </div>
-                  <div>
                     <span className="font-medium text-slate-700">Mã số mẫu:</span>
-                    <span className="ml-2 font-mono">{additionalPatientData.sampleCode}</span>
+                    <span className="ml-2 font-mono text-red-600 font-medium">{testResult.testCode}</span>
                   </div>
                   <div>
                     <span className="font-medium text-slate-700">Ngày lấy mẫu:</span>
                     <span className="ml-2">{additionalPatientData.sampleCollectionDate}</span>
                   </div>
-                </div>
-                <div className="space-y-3">
                   <div>
                     <span className="font-medium text-slate-700">Ngày nhận mẫu:</span>
                     <span className="ml-2">{additionalPatientData.sampleReceiptDate}</span>
                   </div>
+                </div>
+                <div className="space-y-3">
                   <div>
                     <span className="font-medium text-slate-700">Ngày xét nghiệm:</span>
                     <span className="ml-2">{testResult.testDate}</span>

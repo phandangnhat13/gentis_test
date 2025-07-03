@@ -36,7 +36,7 @@ export const TestResultManagement = ({ userRole }: TestResultManagementProps) =>
   const [testResults] = useState([
     {
       id: 1,
-      testCode: 'XN_240115_001',
+      testCode: 'y12345678',
       patientName: 'Nguyễn Thị AA',
       birthDate: '03/07/2025',
       testDate: '03/07/2025',
@@ -130,7 +130,7 @@ export const TestResultManagement = ({ userRole }: TestResultManagementProps) =>
     },
     {
       id: 2,
-      testCode: 'XN_240114_002',
+      testCode: 'ABC123456',
       patientName: 'Trần Thị B',
       birthDate: '1986-03-22',
       testDate: '2024-01-14',
@@ -150,7 +150,7 @@ export const TestResultManagement = ({ userRole }: TestResultManagementProps) =>
     },
     {
       id: 3,
-      testCode: 'XN_240113_003',
+      testCode: 'DEF789012',
       patientName: 'Lê Văn C',
       birthDate: '1992-11-08',
       testDate: '2024-01-13',
@@ -183,7 +183,7 @@ export const TestResultManagement = ({ userRole }: TestResultManagementProps) =>
       ===========================
       
       THÔNG TIN XÉT NGHIỆM:
-      - Mã xét nghiệm: ${testResult.testCode}
+      - Mã số mẫu: ${testResult.testCode}
       - Họ tên: ${testResult.patientName}
       - Ngày sinh: ${testResult.birthDate}
       - Số điện thoại: ${testResult.phone}
@@ -260,7 +260,7 @@ export const TestResultManagement = ({ userRole }: TestResultManagementProps) =>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
-              placeholder="Tìm kiếm theo tên hoặc mã xét nghiệm..."
+              placeholder="Tìm kiếm theo tên hoặc mã số mẫu..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -285,7 +285,7 @@ export const TestResultManagement = ({ userRole }: TestResultManagementProps) =>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Mã XN</TableHead>
+                <TableHead>Mã số mẫu</TableHead>
                 <TableHead>Họ và tên</TableHead>
                 <TableHead>Ngày sinh</TableHead>
                 <TableHead>Ngày XN</TableHead>
