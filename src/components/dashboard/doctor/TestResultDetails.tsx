@@ -39,20 +39,40 @@ export const TestResultDetails = ({ testResult, userRole }: TestResultDetailsPro
   // Mock doctor phone for the test result
   const doctorPhone = '0987 654 321';
 
-  // Mock additional patient data
-  const additionalPatientData = {
-    gender: 'Nữ',
-    gestationalAge: 39, // weeks
-    birthWeight: 3800, // grams
-    twinStatus: 'Sinh đơn', // đôi/đơn
-    ivfStatus: 'Có', // có/không
-    address: 'Hà Nội',
-    antibioticUse: 'Không', // có/không
-    breastfeeding: 'Có', // có/không
-    sampleCode: 'y12345678',
-    sampleCollectionDate: '03/05/2025',
-    sampleReceiptDate: '03/05/2025'
+  // Mock additional patient data based on test code
+  const getAdditionalPatientData = () => {
+    if (testResult.testCode === 'XN_240115_001') {
+      return {
+        gender: 'Nữ',
+        gestationalAge: 39, // weeks
+        birthWeight: 3800, // grams
+        twinStatus: 'Sinh đơn', // đôi/đơn
+        ivfStatus: 'Có', // có/không
+        address: 'Hà Nội',
+        antibioticUse: 'Không', // có/không
+        breastfeeding: 'Có', // có/không
+        sampleCode: 'y12345678',
+        sampleCollectionDate: '03/05/2025',
+        sampleReceiptDate: '03/05/2025'
+      };
+    }
+    // Default data for other tests
+    return {
+      gender: 'Nữ',
+      gestationalAge: 39, // weeks
+      birthWeight: 3800, // grams
+      twinStatus: 'Sinh đơn', // đôi/đơn
+      ivfStatus: 'Có', // có/không
+      address: 'Hà Nội',
+      antibioticUse: 'Không', // có/không
+      breastfeeding: 'Có', // có/không
+      sampleCode: 'y12345678',
+      sampleCollectionDate: '03/05/2025',
+      sampleReceiptDate: '03/05/2025'
+    };
   };
+
+  const additionalPatientData = getAdditionalPatientData();
 
   // Mock disease data matching your disease list
   const diseaseInfo = {
