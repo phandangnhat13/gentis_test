@@ -40,6 +40,21 @@ export const TestResultDetails = ({ testResult, userRole }: TestResultDetailsPro
   // Mock doctor phone for the test result
   const doctorPhone = '0901234567';
 
+  // Mock additional patient data
+  const additionalPatientData = {
+    gender: 'Nam',
+    gestationalAge: 39, // weeks
+    birthWeight: 3200, // grams
+    twinStatus: 'đơn', // đôi/đơn
+    ivfStatus: 'không', // có/không
+    address: '123 Đường ABC, Quận 1, TP.HCM',
+    antibioticUse: 'không', // có/không
+    breastfeeding: 'có', // có/không
+    sampleCode: 'MU_' + testResult.testCode,
+    sampleCollectionDate: '2024-01-14',
+    sampleReceiptDate: '2024-01-14'
+  };
+
   // Mock disease data matching your disease list
   const diseaseInfo = {
     D001: {
@@ -107,11 +122,22 @@ export const TestResultDetails = ({ testResult, userRole }: TestResultDetailsPro
       - Mã xét nghiệm: ${testResult.testCode}
       - Họ tên: ${testResult.patientName}
       - Ngày sinh: ${testResult.birthDate}
-      - Số điện thoại: ${testResult.phone}
-      - Chi nhánh: ${testResult.branch}
+      - Giới tính: ${additionalPatientData.gender}
+      - Số tuổi thai lúc sinh: ${additionalPatientData.gestationalAge} tuần (${additionalPatientData.gestationalAge < 38 ? 'thiếu' : 'đủ'})
+      - Cân nặng lúc sinh: ${additionalPatientData.birthWeight}g
+      - Sinh đôi/sinh đơn: ${additionalPatientData.twinStatus}
+      - Thai IVF: ${additionalPatientData.ivfStatus}
+      - Địa chỉ: ${additionalPatientData.address}
+      - Tình trạng dùng kháng sinh: ${additionalPatientData.antibioticUse}
+      - Dùng sữa mẹ: ${additionalPatientData.breastfeeding}
+      - Mã số mẫu: ${additionalPatientData.sampleCode}
+      - Ngày lấy mẫu: ${additionalPatientData.sampleCollectionDate}
+      - Ngày nhận mẫu: ${additionalPatientData.sampleReceiptDate}
       - Ngày xét nghiệm: ${testResult.testDate}
       - Ngày phân tích: ${testResult.analysisDate}
-      - Bác sĩ phụ trách: ${doctorPhone}
+      - Số điện thoại: ${testResult.phone}
+      - Số điện thoại bác sĩ: ${doctorPhone}
+      - Kết quả: ${testResult.result === 'positive' ? 'Dương tính' : 'Âm tính'}
       
       B. CHI TIẾT 77 CHỈ SỐ SINH HỌC:
       ${BIOMARKER_LIST.map(biomarker => {
@@ -183,46 +209,88 @@ export const TestResultDetails = ({ testResult, userRole }: TestResultDetailsPro
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-3">
               <div className="flex items-center">
-                <span className="font-medium text-slate-600 w-32">Mã xét nghiệm:</span>
+                <span className="font-medium text-slate-600 w-48">Mã xét nghiệm:</span>
                 <span className="font-mono text-red-600 font-medium">{testResult.testCode}</span>
               </div>
               <div className="flex items-center">
-                <span className="font-medium text-slate-600 w-32">Họ tên:</span>
+                <span className="font-medium text-slate-600 w-48">Họ và tên:</span>
                 <span className="font-medium">{testResult.patientName}</span>
               </div>
               <div className="flex items-center">
-                <span className="font-medium text-slate-600 w-32">Ngày sinh:</span>
+                <span className="font-medium text-slate-600 w-48">Ngày sinh:</span>
                 <span>{testResult.birthDate}</span>
               </div>
               <div className="flex items-center">
-                <Phone className="h-4 w-4 mr-2 text-slate-400" />
-                <span className="font-medium text-slate-600 w-32">Số điện thoại:</span>
-                <span>{testResult.phone}</span>
+                <span className="font-medium text-slate-600 w-48">Giới tính:</span>
+                <span>{additionalPatientData.gender}</span>
               </div>
               <div className="flex items-center">
-                <Stethoscope className="h-4 w-4 mr-2 text-slate-400" />
-                <span className="font-medium text-slate-600 w-32">SĐT bác sĩ:</span>
-                <span>{doctorPhone}</span>
+                <span className="font-medium text-slate-600 w-48">Số tuổi thai lúc sinh:</span>
+                <span>{additionalPatientData.gestationalAge} tuần ({additionalPatientData.gestationalAge < 38 ? 'thiếu' : 'đủ'})</span>
+              </div>
+              <div className="flex items-center">
+                <span className="font-medium text-slate-600 w-48">Cân nặng lúc sinh:</span>
+                <span>{additionalPatientData.birthWeight}g</span>
+              </div>
+              <div className="flex items-center">
+                <span className="font-medium text-slate-600 w-48">Sinh đôi/sinh đơn:</span>
+                <span>{additionalPatientData.twinStatus}</span>
+              </div>
+              <div className="flex items-center">
+                <span className="font-medium text-slate-600 w-48">Thai IVF:</span>
+                <span>{additionalPatientData.ivfStatus}</span>
+              </div>
+              <div className="flex items-center">
+                <MapPin className="h-4 w-4 mr-2 text-slate-400" />
+                <span className="font-medium text-slate-600 w-48">Địa chỉ:</span>
+                <span>{additionalPatientData.address}</span>
               </div>
             </div>
             <div className="space-y-3">
               <div className="flex items-center">
-                <MapPin className="h-4 w-4 mr-2 text-slate-400" />
-                <span className="font-medium text-slate-600 w-32">Chi nhánh:</span>
-                <span>{testResult.branch}</span>
+                <span className="font-medium text-slate-600 w-48">Tình trạng dùng kháng sinh:</span>
+                <span>{additionalPatientData.antibioticUse}</span>
+              </div>
+              <div className="flex items-center">
+                <span className="font-medium text-slate-600 w-48">Dùng sữa mẹ:</span>
+                <span>{additionalPatientData.breastfeeding}</span>
+              </div>
+              <div className="flex items-center">
+                <span className="font-medium text-slate-600 w-48">Mã số mẫu:</span>
+                <span className="font-mono">{additionalPatientData.sampleCode}</span>
               </div>
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-2 text-slate-400" />
-                <span className="font-medium text-slate-600 w-32">Ngày xét nghiệm:</span>
+                <span className="font-medium text-slate-600 w-48">Ngày lấy mẫu:</span>
+                <span>{additionalPatientData.sampleCollectionDate}</span>
+              </div>
+              <div className="flex items-center">
+                <Calendar className="h-4 w-4 mr-2 text-slate-400" />
+                <span className="font-medium text-slate-600 w-48">Ngày nhận mẫu:</span>
+                <span>{additionalPatientData.sampleReceiptDate}</span>
+              </div>
+              <div className="flex items-center">
+                <Calendar className="h-4 w-4 mr-2 text-slate-400" />
+                <span className="font-medium text-slate-600 w-48">Ngày xét nghiệm:</span>
                 <span>{testResult.testDate}</span>
               </div>
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-2 text-slate-400" />
-                <span className="font-medium text-slate-600 w-32">Ngày phân tích:</span>
+                <span className="font-medium text-slate-600 w-48">Ngày phân tích:</span>
                 <span>{testResult.analysisDate}</span>
               </div>
               <div className="flex items-center">
-                <span className="font-medium text-slate-600 w-32">Kết quả:</span>
+                <Phone className="h-4 w-4 mr-2 text-slate-400" />
+                <span className="font-medium text-slate-600 w-48">Số điện thoại:</span>
+                <span>{testResult.phone}</span>
+              </div>
+              <div className="flex items-center">
+                <Stethoscope className="h-4 w-4 mr-2 text-slate-400" />
+                <span className="font-medium text-slate-600 w-48">Số điện thoại bác sĩ:</span>
+                <span>{doctorPhone}</span>
+              </div>
+              <div className="flex items-center">
+                <span className="font-medium text-slate-600 w-48">Kết quả:</span>
                 <Badge variant={testResult.result === 'positive' ? "destructive" : "secondary"}>
                   {testResult.result === 'positive' ? 'Dương tính' : 'Âm tính'}
                 </Badge>
