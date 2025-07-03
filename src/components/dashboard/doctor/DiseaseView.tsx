@@ -26,29 +26,9 @@ export const DiseaseView = () => {
 
   // Your specific disease data
   const [diseases] = useState([
-    {
+      {
       id: 1,
       code: 'D001',
-      name: 'Isovaleric acidemia (isovaleryl-CoA dehydrogenase)',
-      description: 'Rối loạn chuyển hóa axit amin do thiếu hụt enzyme isovaleryl-CoA dehydrogenase, dẫn đến tích tụ axit isovaleric.',
-      symptoms: ['Mùi chân đặc trưng', 'Nôn mửa', 'Hôn mê', 'Chậm phát triển'],
-      diagnosis: 'Xét nghiệm tandem mass spectrometry, phát hiện tăng C5 (isovalerylcarnitine)',
-      treatment: 'Chế độ ăn hạn chế leucine, bổ sung glycine và carnitine',
-      summary: 'Bệnh chuyển hóa hiếm gặp do thiếu enzyme isovaleryl-CoA dehydrogenase, có thể gây nguy hiểm tính mạng nếu không điều trị.'
-    },
-    {
-      id: 2,
-      code: 'D002', 
-      name: 'Glutaric acidemia type I (glutaryl-CoA dehydrogenase)',
-      description: 'Rối loạn chuyển hóa do thiếu hụt enzyme glutaryl-CoA dehydrogenase, gây tích tụ axit glutaric.',
-      symptoms: ['Đầu to', 'Chậm phát triển vận động', 'Rối loạn thần kinh', 'Co giật'],
-      diagnosis: 'Xét nghiệm tandem MS, tăng glutarylcarnitine, phân tích nước tiểu',
-      treatment: 'Chế độ ăn hạn chế lysine và tryptophan, bổ sung carnitine và riboflavin',
-      summary: 'Bệnh chuyển hóa ảnh hưởng đến não bộ, cần chẩn đoán và điều trị sớm để tránh tổn thương não vĩnh viễn.'
-    },
-    {
-      id: 3,
-      code: 'D003',
       name: '3-Hydroxy-3-methylglutaric acidemia (3-hydroxy-3-methylglutaryl-CoA lyase)',
       description: 'Rối loạn chuyển hóa ketone và leucine do thiếu hụt enzyme HMG-CoA lyase.',
       symptoms: ['Hạ đường huyết không ketone', 'Nôn mửa', 'Hôn mê', 'Suy thở'],
@@ -57,6 +37,28 @@ export const DiseaseView = () => {
       summary: ['3-Hydroxy-3-methylglutaric acidemia (HMG acidemia) là một rối loạn chuyển hóa bẩm sinh hiếm gặp do đột biến gen HMGCL, gây thiếu hụt enzym 3-hydroxy-3-methylglutaryl-CoA lyase. Enzym này cần thiết cho quá trình phân giải leucine và sản xuất thể ceton trong thời kỳ nhịn đói hoặc stress chuyển hóa.',
                 'Sự thiếu hụt enzym này dẫn đến tích tụ các chất chuyển hóa độc hại (bao gồm acid 3-hydroxy-3-methylglutaric, acid 3-methylglutaric) và gây ra các triệu chứng nghiêm trọng như hạ đường huyết không sinh ceton, nhiễm toan, nôn mửa, hôn mê và co giật.',
                 'Bệnh thường khởi phát trong giai đoạn sơ sinh hoặc thời thơ ấu và có thể đe dọa tính mạng nếu không được chẩn đoán và điều trị kịp thời.']
+    },
+    {
+      id: 2,
+      code: 'D002', 
+      name: 'ARGININEMIA',
+      description: 'Rối loạn chuyển hóa do thiếu hụt enzyme glutaryl-CoA dehydrogenase, gây tích tụ axit glutaric.',
+      symptoms: ['Đầu to', 'Chậm phát triển vận động', 'Rối loạn thần kinh', 'Co giật'],
+      diagnosis: 'Xét nghiệm tandem MS, tăng glutarylcarnitine, phân tích nước tiểu',
+      treatment: 'Chế độ ăn hạn chế lysine và tryptophan, bổ sung carnitine và riboflavin',
+      summary: ['Argininemia là một rối loạn chuyển hóa hiếm gặp, thuộc nhóm rối loạn chu trình ure. Bệnh xảy ra do đột biến ở gen ARG1, gây thiếu hụt enzym arginase 1 – enzym cần thiết để chuyển hóa arginine thành ornithine và urê nhằm thải trừ nitơ dư thừa ra khỏi cơ thể.',
+                'Thiếu enzym này dẫn đến tích tụ arginine và amoniac trong máu, gây độc cho hệ thần kinh trung ương. Triệu chứng thường xuất hiện từ cuối giai đoạn nhũ nhi đến thời thơ ấu, với các biểu hiện như chậm phát triển, co cứng cơ, co giật và chậm nói.',
+                'So với các rối loạn chu trình ure khác, argininemia thường có biểu hiện mạn tính và ít gây tăng amoniac cấp tính nghiêm trọng hơn, nhưng vẫn có thể dẫn đến tổn thương thần kinh vĩnh viễn nếu không được điều trị.']
+    },
+    {
+      id: 3,
+      code: 'D003',
+      name: 'Isovaleric acidemia (isovaleryl-CoA dehydrogenase)',
+      description: 'Rối loạn chuyển hóa axit amin do thiếu hụt enzyme isovaleryl-CoA dehydrogenase, dẫn đến tích tụ axit isovaleric.',
+      symptoms: ['Mùi chân đặc trưng', 'Nôn mửa', 'Hôn mê', 'Chậm phát triển'],
+      diagnosis: 'Xét nghiệm tandem mass spectrometry, phát hiện tăng C5 (isovalerylcarnitine)',
+      treatment: 'Chế độ ăn hạn chế leucine, bổ sung glycine và carnitine',
+      summary: 'Bệnh chuyển hóa hiếm gặp do thiếu enzyme isovaleryl-CoA dehydrogenase, có thể gây nguy hiểm tính mạng nếu không điều trị.'
     },
     {
       id: 4,
