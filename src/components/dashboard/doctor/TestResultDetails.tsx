@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -51,9 +52,24 @@ export const TestResultDetails = ({ testResult, userRole }: TestResultDetailsPro
         address: 'Hà Nội',
         antibioticUse: 'Không', // có/không
         breastfeeding: 'Có', // có/không
-        sampleCode: 'y12345678',
+        sampleCode: testResult.testCode,
         sampleCollectionDate: '03/05/2025',
         sampleReceiptDate: '03/05/2025'
+      };
+    } else if (testResult.testCode === 'y12345679') {
+      return {
+        gender: 'Nữ',
+        gestationalAge: 39, // weeks
+        birthWeight: 3700, // grams
+        twinStatus: 'Sinh đơn', // đôi/đơn
+        ivfStatus: 'Có', // có/không
+        address: 'Hà Nội',
+        antibioticUse: 'Không', // có/không
+        breastfeeding: 'Có', // có/không
+        sampleCode: testResult.testCode,
+        sampleCollectionDate: '03/06/2025',
+        sampleReceiptDate: '03/06/2025',
+        doctorPhone: '0908 631 472'
       };
     }
     // Default data for other tests
@@ -155,7 +171,7 @@ export const TestResultDetails = ({ testResult, userRole }: TestResultDetailsPro
       - Ngày xét nghiệm: ${testResult.testDate}
       - Ngày phân tích: ${testResult.analysisDate}
       - Số điện thoại: ${testResult.phone}
-      - Số điện thoại bác sĩ: ${doctorPhone}
+      - Số điện thoại bác sĩ: ${additionalPatientData.doctorPhone || doctorPhone}
       - Kết quả: ${testResult.result === 'positive' ? 'Dương tính' : 'Âm tính'}
       
       B. CHI TIẾT 77 CHỈ SỐ SINH HỌC:
@@ -276,7 +292,7 @@ export const TestResultDetails = ({ testResult, userRole }: TestResultDetailsPro
                   </div>
                   <div>
                     <span className="font-medium text-slate-700">Số điện thoại bác sĩ chỉ định:</span>
-                    <span className="ml-2">{doctorPhone}</span>
+                    <span className="ml-2">{additionalPatientData.doctorPhone || doctorPhone}</span>
                   </div>
                 </div>
               </div>
