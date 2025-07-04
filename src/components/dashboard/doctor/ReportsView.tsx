@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { PdfGenerator, sanitizeVietnameseText, formatBiomarkers } from '@/lib/pdfGenerator';
 import { 
   FileText, 
   Download, 
@@ -125,64 +126,85 @@ export const ReportsView = ({ userRole }: ReportsViewProps) => {
     }
   ]);
 
-  const handleExportPDF = (reportId: number) => {
+  const handleExportPDF = async (reportId: number) => {
     const report = reports.find(r => r.id === reportId);
     if (report) {
-      const pdfContent = `
-        BÁAO CÁO CHẨN ĐOÁN XÉT NGHIỆM CHI TIẾT
-        ======================================
+      try {
+        const pdfGen = new PdfGenerator();
         
-        THÔNG TIN BỆNH NHÂN:
-        - Họ tên: ${report.patientName}
-        - Mã bệnh nhân: ${report.patientCode}
-        - Mã xét nghiệm: ${report.testCode}
-        - Thời gian xét nghiệm: ${report.testDateTime}
-        - Thời gian chẩn đoán: ${report.diagnosisDateTime}
+        // Title
+        pdfGen.addTitle('BÁO CÁO CHẨN ĐOÁN XÉT NGHIỆM CHI TIẾT');
         
-        KẾT QUẢ CHẨN ĐOÁN:
-        - Chẩn đoán chính: ${report.primaryDiagnosis}
-        - Điểm nguy cơ: ${report.riskScore}/100
-        - Mức độ nguy cơ: ${report.riskLevel === 'high' ? 'CAO' : report.riskLevel === 'medium' ? 'TRUNG BÌNH' : 'THẤP'}
+        // Patient Info Section
+        pdfGen.addSectionHeader('THÔNG TIN BỆNH NHÂN:');
+        pdfGen.addLabelValue('Họ tên', report.patientName);
+        pdfGen.addLabelValue('Mã bệnh nhân', report.patientCode);
+        pdfGen.addLabelValue('Mã xét nghiệm', report.testCode);
+        pdfGen.addLabelValue('Thời gian xét nghiệm', report.testDateTime);
+        pdfGen.addLabelValue('Thời gian chẩn đoán', report.diagnosisDateTime);
         
-        CHI TIẾT CÁC CHỈ SỐ SINH HỌC:
-        ${Object.entries(report.biomarkers).map(([key, marker]) => 
-          `- ${key.toUpperCase()}: ${marker.value} (Bình thường: ${marker.normal}) - Trạng thái: ${marker.status === 'high' ? 'CAO' : marker.status === 'low' ? 'THẤP' : 'BÌNH THƯỜNG'}`
-        ).join('\n        ')}
+        pdfGen.addSpace();
         
-        KHUYẾN NGHỊ XỬ LÝ CHI TIẾT:
-        ${report.recommendations.map((rec, index) => `${index + 1}. ${rec}`).join('\n        ')}
+        // Diagnosis Section
+        pdfGen.addSectionHeader('KẾT QUẢ CHẨN ĐOÁN:');
+        pdfGen.addLabelValue('Chẩn đoán chính', report.primaryDiagnosis);
+        pdfGen.addLabelValue('Điểm nguy cơ', `${report.riskScore}/100`);
+        const riskLevelText = report.riskLevel === 'high' ? 'CAO' : report.riskLevel === 'medium' ? 'TRUNG BÌNH' : 'THẤP';
+        pdfGen.addLabelValue('Mức độ nguy cơ', riskLevelText);
         
-        PHÂN TÍCH NGUY CƠ:
-        - Số chỉ số bất thường: ${Object.values(report.biomarkers).filter(m => m.status !== 'normal').length}
-        - Các chỉ số vượt ngưỡng: ${Object.entries(report.biomarkers).filter(([_, m]) => m.status !== 'normal').map(([key, _]) => key.toUpperCase()).join(', ')}
+        pdfGen.addSpace();
         
-        GHI CHÚ QUAN TRỌNG:
-        - Báo cáo này chỉ mang tính chất tham khảo
-        - Cần kết hợp với thăm khám lâm sàng để có chẩn đoán chính xác
-        - Liên hệ bác sĩ điều trị để được tư vấn cụ thể
+        // Convert biomarkers to array format for new API
+        const biomarkersArray = Object.entries(report.biomarkers).map(([key, marker]) => ({
+          name: key.toUpperCase(),
+          value: marker.value,
+          unit: '',
+          normalRange: marker.normal,
+          status: marker.status === 'high' ? 'Cao' : 
+                  marker.status === 'low' ? 'Thấp' : 'Bình thường'
+        }));
         
-        ======================================
-        Báo cáo được tạo bởi SLSS Gentis
-        Ngày tạo: ${new Date().toLocaleString('vi-VN')}
-        Người tạo: Bác sĩ ${userRole === 'collaborator' ? 'Cộng tác' : 'Chính'}
-      `;
-
-      const blob = new Blob([pdfContent], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `BaoCaoChiTiet_${report.patientCode}_${report.date}.txt`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      
-      toast({
-        title: "Xuất báo cáo chi tiết thành công",
-        description: `Báo cáo chi tiết cho bệnh nhân ${report.patientName} đã được tải xuống`,
-      });
-      
-      console.log('Xuất báo cáo chi tiết cho:', report.patientName);
+        // Format biomarkers using new table format
+        pdfGen.formatBiomarkers(biomarkersArray);
+        
+        pdfGen.addSpace();
+        
+        // Recommendations Section
+        pdfGen.addSectionHeader('KHUYẾN NGHỊ XỬ LÝ CHI TIẾT:');
+        report.recommendations.forEach((rec, index) => {
+          pdfGen.addText(`${index + 1}. ${rec}`);
+        });
+        
+        pdfGen.addSpace();
+        
+        // Risk Analysis Section
+        const abnormalCount = Object.values(report.biomarkers).filter(m => m.status !== 'normal').length;
+        const abnormalNames = Object.entries(report.biomarkers)
+          .filter(([_, m]) => m.status !== 'normal')
+          .map(([key, _]) => key.toUpperCase())
+          .join(', ');
+        
+        pdfGen.addSectionHeader('PHÂN TÍCH NGUY CƠ:');
+        pdfGen.addLabelValue('Số chỉ số bất thường', abnormalCount.toString());
+        pdfGen.addLabelValue('Các chỉ số vượt ngưỡng', abnormalNames);
+        
+        // Generate and download PDF
+        await pdfGen.downloadPdf(`BaoCaoChiTiet_${report.patientCode}_${report.date}.pdf`);
+        
+        toast({
+          title: "Xuất báo cáo chi tiết thành công",
+          description: `Báo cáo chi tiết cho bệnh nhân ${report.patientName} đã được tải xuống với font tiếng Việt`,
+        });
+        
+        console.log('Xuất báo cáo chi tiết cho:', report.patientName);
+      } catch (error) {
+        console.error('Error generating PDF:', error);
+        toast({
+          title: "Lỗi tạo PDF",
+          description: "Không thể tạo file PDF. Vui lòng thử lại.",
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -222,7 +244,7 @@ export const ReportsView = ({ userRole }: ReportsViewProps) => {
       - Nguy cơ thấp: ${reports.filter(r => r.riskLevel === 'low').length}
       - Tỷ lệ phát hiện bệnh: ${((reports.filter(r => r.riskLevel !== 'low').length / reports.length) * 100).toFixed(1)}%
       
-      Báo cáo được tạo bởi SLSS Gentis
+                    Báo cáo được tạo bởi Gentis
       Ngày tạo: ${new Date().toLocaleString('vi-VN')}
       Người tạo: Bác sĩ ${userRole === 'collaborator' ? 'Cộng tác' : 'Chính'}
     `;

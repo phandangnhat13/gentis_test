@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { PdfGenerator, sanitizeVietnameseText, formatBiomarkers } from '@/lib/pdfGenerator';
 import { 
   Upload, 
   FileText, 
@@ -197,7 +198,7 @@ export const DataAnalysis = () => {
     }
   };
 
-  const exportResults = (format: 'csv' | 'pdf') => {
+  const exportResults = async (format: 'csv' | 'pdf') => {
     if (analysisResults.length === 0) return;
 
     if (format === 'csv') {
@@ -222,43 +223,69 @@ export const DataAnalysis = () => {
       link.click();
       URL.revokeObjectURL(url);
     } else {
-      // PDF export (simplified as text)
-      const pdfContent = analysisResults.map((result, index) => `
-        BÁO CÁO PHÂN TÍCH XÉT NGHIỆM #${index + 1}
-        ==========================================
+      try {
+        // PDF export
+        const pdfGen = new PdfGenerator();
         
-        Mã bệnh nhân: ${result.patientCode || result.sampleId}
-        Tên bệnh nhân: ${result.name || 'N/A'}
-        Tuổi: ${result.age || 'N/A'}
-        Giới tính: ${result.gender || 'N/A'}
+        // Title
+        pdfGen.addTitle('BÁO CÁO PHÂN TÍCH XÉT NGHIỆM');
         
-        ĐIỂM NGUY CƠ: ${result.riskScore}/100
+        // Summary
+        pdfGen.addLabelValue('Ngày tạo', new Date().toLocaleDateString('vi-VN'));
+        pdfGen.addLabelValue('Tổng số mẫu', analysisResults.length.toString());
+        pdfGen.addSpace();
         
-        CHỈ SỐ SINH HỌC:
-        ${Object.entries(result.biomarkers).map(([key, marker]: [string, any]) => 
-          `- ${key.toUpperCase()}: ${marker.value} (BT: ${marker.normalRange}) - ${marker.status.toUpperCase()} [Tier ${marker.tier}]`
-        ).join('\n        ')}
+        analysisResults.forEach((result, index) => {
+          // Sample header
+          pdfGen.addSectionHeader(`BÁO CÁO MẪU #${index + 1}`);
+          
+          // Basic info
+          pdfGen.addLabelValue('Mã bệnh nhân', result.patientCode || result.sampleId);
+          pdfGen.addLabelValue('Tên bệnh nhân', result.name || 'N/A');
+          pdfGen.addLabelValue('Tuổi', result.age?.toString() || 'N/A');
+          pdfGen.addLabelValue('Giới tính', result.gender || 'N/A');
+          pdfGen.addLabelValue('Điểm nguy cơ', `${result.riskScore}/100`);
+          
+          pdfGen.addSpace();
+          
+          // Convert biomarkers to array format for new API
+          const biomarkersArray = Object.entries(result.biomarkers).map(([key, marker]: [string, any]) => ({
+            name: key.toUpperCase(),
+            value: marker.value,
+            unit: '',
+            normalRange: marker.normalRange,
+            status: marker.status === 'high' ? 'Cao' : 
+                    marker.status === 'low' ? 'Thấp' : 'Bình thường'
+          }));
+          
+          // Format biomarkers using new table format
+          pdfGen.formatBiomarkers(biomarkersArray);
+          
+          // Conclusion
+          const conclusion = result.riskScore > 50 ? 'NGUY CƠ CAO - Cần can thiệp y tế ngay' : 
+                           result.riskScore > 20 ? 'NGUY CƠ TRUNG BÌNH - Theo dõi và tái khám' : 
+                           'BÌNH THƯỜNG - Duy trì lối sống lành mạnh';
+          pdfGen.addText(`Kết luận: ${conclusion}`);
+          
+          pdfGen.addSpace();
+        });
         
-        KẾT LUẬN:
-        ${result.riskScore > 50 ? 'NGUY CƠ CAO - Cần can thiệp y tế ngay' : 
-          result.riskScore > 20 ? 'NGUY CƠ TRUNG BÌNH - Theo dõi và tái khám' : 
-          'BÌNH THƯỜNG - Duy trì lối sống lành mạnh'}
-        
-        ==========================================
-      `).join('\n\n');
-
-      const blob = new Blob([pdfContent], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `BaoCaoPhanTich_${new Date().toISOString().split('T')[0]}.txt`;
-      link.click();
-      URL.revokeObjectURL(url);
+        // Generate and download PDF
+        await pdfGen.downloadPdf(`BaoCaoPhanTich_${new Date().toISOString().split('T')[0]}.pdf`);
+      } catch (error) {
+        console.error('Error generating PDF:', error);
+        toast({
+          title: "Lỗi tạo PDF",
+          description: "Không thể tạo file PDF. Vui lòng thử lại.",
+          variant: "destructive"
+        });
+        return;
+      }
     }
 
     toast({
       title: "Xuất kết quả thành công",
-      description: `Đã xuất ${analysisResults.length} kết quả phân tích`,
+      description: `Đã xuất ${analysisResults.length} kết quả phân tích với font tiếng Việt`,
     });
   };
 

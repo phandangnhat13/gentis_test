@@ -4,6 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { PdfGenerator, sanitizeVietnameseText, formatBiomarkers } from '@/lib/pdfGenerator';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { 
   Search, 
   Download,
@@ -30,6 +40,8 @@ interface TestResultManagementProps {
 export const TestResultManagement = ({ userRole }: TestResultManagementProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTest, setSelectedTest] = useState<any>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const isCollaborator = userRole === 'collaborator';
   const { toast } = useToast();
 
@@ -251,51 +263,68 @@ export const TestResultManagement = ({ userRole }: TestResultManagementProps) =>
     console.log('Re-analyzing test:', testResult.testCode);
   };
 
-  const handleDownloadDetails = (testResult: any) => {
-    const reportContent = `
-      BÁO CÁO KẾT QUẢ XÉT NGHIỆM
-      ===========================
+  const handleDownloadDetails = async (testResult: any) => {
+    try {
+      const pdfGen = new PdfGenerator();
       
-      THÔNG TIN XÉT NGHIỆM:
-      - Mã số mẫu: ${testResult.testCode}
-      - Họ tên: ${testResult.patientName}
-      - Ngày sinh: ${testResult.birthDate}
-      - Số điện thoại: ${testResult.phone}
-      - Chi nhánh: ${testResult.branch}
-      - Ngày xét nghiệm: ${testResult.testDate}
-      - Ngày phân tích: ${testResult.analysisDate}
+      // Title
+      pdfGen.addTitle('BÁO CÁO KẾT QUẢ XÉT NGHIỆM');
       
-      KẾT QUẢ:
-      - Kết quả: ${testResult.result === 'positive' ? 'Dương tính' : 'Âm tính'}
-      - Chẩn đoán: ${testResult.diagnosis}
+      // Patient Information
+      const patientInfo = {
+        sampleId: testResult.testCode,
+        patientName: testResult.patientName,
+        birthDate: testResult.birthDate,
+        phone: testResult.phone,
+        branch: testResult.branch,
+        testDate: testResult.testDate,
+        analysisDate: testResult.analysisDate
+      };
+      pdfGen.formatPatientInfo(patientInfo);
       
-      CHỈ SỐ SINH HỌC:
-      ${Object.entries(testResult.biomarkers).map(([key, marker]: [string, any]) => 
-        `- ${key.toUpperCase()}: ${marker.value} (BT: ${marker.normal}) - ${marker.status === 'high' ? 'Cao' : marker.status === 'low' ? 'Thấp' : 'Bình thường'}`
-      ).join('\n      ')}
+      // Results Section
+      pdfGen.addSectionHeader('KẾT QUẢ:');
+      const resultText = testResult.result === 'positive' ? 'Dương tính' : 'Âm tính';
+      pdfGen.addLabelValue('Kết quả', resultText);
+      pdfGen.addLabelValue('Chẩn đoán', testResult.diagnosis);
       
-      KẾT LUẬN BÁC SĨ:
-      ${testResult.doctorConclusion || 'Chưa có kết luận'}
+      pdfGen.addSpace();
       
-      ===========================
-      Báo cáo được tạo bởi SLSS Gentis
-      Ngày tạo: ${new Date().toLocaleString('vi-VN')}
-    `;
-
-    const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `BaoCao_${testResult.testCode}.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    
-    toast({
-      title: "Tải xuống thành công",
-      description: `Báo cáo xét nghiệm ${testResult.testCode} đã được tải xuống`,
-    });
+      // Convert biomarkers object to array for the new format
+      const biomarkersArray = Object.entries(testResult.biomarkers).map(([key, marker]: [string, any]) => ({
+        name: key.toUpperCase(),
+        value: marker.value,
+        unit: '',
+        normalRange: marker.normal,
+        status: marker.status === 'high' ? 'Cao' : 
+                marker.status === 'low' ? 'Thấp' : 'Bình thường'
+      }));
+      
+      // Format biomarkers using new table format
+      pdfGen.formatBiomarkers(biomarkersArray);
+      
+      pdfGen.addSpace();
+      
+      // Doctor Conclusion Section
+      pdfGen.addSectionHeader('KẾT LUẬN BÁC SĨ:');
+      const conclusion = testResult.doctorConclusion || 'Chưa có kết luận';
+      pdfGen.addText(conclusion);
+      
+      // Generate and download PDF
+      await pdfGen.downloadPdf(`BaoCao_${testResult.testCode}.pdf`);
+      
+      toast({
+        title: "Tải xuống thành công",
+        description: `Báo cáo xét nghiệm ${testResult.testCode} đã được tải xuống PDF với font tiếng Việt`,
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Lỗi tạo PDF",
+        description: "Không thể tạo file PDF. Vui lòng thử lại.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleViewTestDetails = (testResult: any) => {
@@ -314,6 +343,18 @@ export const TestResultManagement = ({ userRole }: TestResultManagementProps) =>
     
     return matchesSearch;
   });
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredTestResults.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentTestResults = filteredTestResults.slice(startIndex, endIndex);
+
+  // Reset page when search changes
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  };
 
   return (
     <div className="space-y-6">
@@ -336,7 +377,7 @@ export const TestResultManagement = ({ userRole }: TestResultManagementProps) =>
             <Input
               placeholder="Tìm kiếm theo tên hoặc mã số mẫu..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-10"
             />
           </div>
@@ -372,7 +413,7 @@ export const TestResultManagement = ({ userRole }: TestResultManagementProps) =>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredTestResults.map((test) => (
+              {currentTestResults.map((test) => (
                 <TableRow key={test.id}>
                   <TableCell className="font-mono text-sm">{test.testCode}</TableCell>
                   <TableCell className="font-medium">{test.patientName}</TableCell>
@@ -422,6 +463,75 @@ export const TestResultManagement = ({ userRole }: TestResultManagementProps) =>
               ))}
             </TableBody>
           </Table>
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-6 py-4 border-t">
+              <div className="text-sm text-slate-600">
+                Hiển thị {startIndex + 1} đến {Math.min(endIndex, filteredTestResults.length)} của {filteredTestResults.length} kết quả xét nghiệm
+              </div>
+              
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage > 1) setCurrentPage(currentPage - 1);
+                      }}
+                      className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                  
+                  {[...Array(totalPages)].map((_, index) => {
+                    const page = index + 1;
+                    if (
+                      page === 1 ||
+                      page === totalPages ||
+                      (page >= currentPage - 1 && page <= currentPage + 1)
+                    ) {
+                      return (
+                        <PaginationItem key={page}>
+                          <PaginationLink
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setCurrentPage(page);
+                            }}
+                            isActive={currentPage === page}
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
+                    } else if (
+                      page === currentPage - 2 ||
+                      page === currentPage + 2
+                    ) {
+                      return (
+                        <PaginationItem key={page}>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      );
+                    }
+                    return null;
+                  })}
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+                      }}
+                      className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </CardContent>
       </Card>
 

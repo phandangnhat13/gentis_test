@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { PdfGenerator } from '@/lib/pdfGenerator';
 import { Download, FileText, Calendar, User, Phone, MapPin, Activity, Info, Stethoscope } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { BIOMARKER_LIST, generateDefaultBiomarkers } from '@/data/biomarkers';
@@ -135,97 +135,139 @@ export const TestResultDetails = ({ testResult, userRole }: TestResultDetailsPro
     });
   };
 
-  const handleDownloadReport = () => {
-    // Get high and low biomarkers for analysis
+  const handleDownloadReport = async () => {
+    const additionalPatientData = {
+      gender: 'Nữ',
+      gestationalAge: 39,
+      birthWeight: 3800,
+      twinStatus: 'Sinh đơn',
+      ivfStatus: 'Có',
+      address: 'Chi nhánh Hà Nội',
+      antibioticUse: 'Bình thường',
+      breastfeeding: 'Dùng sữa mẹ',
+      sampleCode: testResult.testCode,
+      sampleCollectionDate: '02/07/2025',
+      sampleReceiptDate: '02/07/2025',
+      doctorPhone: '0901 234 567'
+    };
+
+    const doctorPhone = userRole === 'collaborator' ? '0901 234 567' : '0123 456 789';
+
+    const fullBiomarkers = generateDefaultBiomarkers();
     const highBiomarkers = BIOMARKER_LIST.filter(biomarker => {
       const key = biomarker.code.toLowerCase();
-      const marker = fullBiomarkers[key];
-      return marker.status === 'high';
+      return fullBiomarkers[key]?.status === 'high';
     });
-
     const lowBiomarkers = BIOMARKER_LIST.filter(biomarker => {
       const key = biomarker.code.toLowerCase();
-      const marker = fullBiomarkers[key];
-      return marker.status === 'low';
+      return fullBiomarkers[key]?.status === 'low';
     });
 
-    const reportContent = `
-      BÁO CÁO XÉT NGHIỆM CHI TIẾT
-      ============================
+    try {
+      const pdfGen = new PdfGenerator();
       
-      A. THÔNG TIN XÉT NGHIỆM:
-      - Mã số mẫu: ${testResult.testCode}
-      - Họ tên: ${testResult.patientName}
-      - Ngày sinh: ${testResult.birthDate}
-      - Giới tính: ${additionalPatientData.gender}
-      - Số tuổi thai lúc sinh: ${additionalPatientData.gestationalAge} tuần (${additionalPatientData.gestationalAge < 38 ? 'thiếu' : 'đủ'})
-      - Cân nặng lúc sinh: ${additionalPatientData.birthWeight}g
-      - Sinh đôi/sinh đơn: ${additionalPatientData.twinStatus}
-      - Thai IVF: ${additionalPatientData.ivfStatus}
-      - Địa chỉ: ${additionalPatientData.address}
-      - Tình trạng dùng kháng sinh: ${additionalPatientData.antibioticUse}
-      - Dùng sữa mẹ: ${additionalPatientData.breastfeeding}
-      - Mã số mẫu: ${additionalPatientData.sampleCode}
-      - Ngày lấy mẫu: ${additionalPatientData.sampleCollectionDate}
-      - Ngày nhận mẫu: ${additionalPatientData.sampleReceiptDate}
-      - Ngày xét nghiệm: ${testResult.testDate}
-      - Ngày phân tích: ${testResult.analysisDate}
-      - Số điện thoại: ${testResult.phone}
-      - Số điện thoại bác sĩ: ${additionalPatientData.doctorPhone || doctorPhone}
-      - Kết quả: ${testResult.result === 'positive' ? 'Dương tính' : 'Âm tính'}
+      // Title
+      pdfGen.addTitle('BÁO CÁO XÉT NGHIỆM CHI TIẾT');
       
-      B. CHI TIẾT 77 CHỈ SỐ SINH HỌC:
-      ${BIOMARKER_LIST.map(biomarker => {
+      // Section A - Test Information
+      pdfGen.addSectionHeader('A. THÔNG TIN XÉT NGHIỆM:');
+      pdfGen.addLabelValue('Mã số mẫu', testResult.testCode);
+      pdfGen.addLabelValue('Họ tên', testResult.patientName);
+      pdfGen.addLabelValue('Ngày sinh', testResult.birthDate);
+      pdfGen.addLabelValue('Giới tính', additionalPatientData.gender);
+      pdfGen.addLabelValue('Số tuổi thai lúc sinh', `${additionalPatientData.gestationalAge} tuần`);
+      pdfGen.addLabelValue('Cân nặng lúc sinh', `${additionalPatientData.birthWeight}g`);
+      pdfGen.addLabelValue('Sinh đôi/sinh đơn', additionalPatientData.twinStatus);
+      pdfGen.addLabelValue('Thai IVF', additionalPatientData.ivfStatus);
+      pdfGen.addLabelValue('Địa chỉ', additionalPatientData.address);
+      pdfGen.addLabelValue('Tình trạng dùng kháng sinh', additionalPatientData.antibioticUse);
+      pdfGen.addLabelValue('Dùng sữa mẹ', additionalPatientData.breastfeeding);
+      pdfGen.addLabelValue('Ngày lấy mẫu', additionalPatientData.sampleCollectionDate);
+      pdfGen.addLabelValue('Ngày nhận mẫu', additionalPatientData.sampleReceiptDate);
+      pdfGen.addLabelValue('Ngày xét nghiệm', testResult.testDate);
+      pdfGen.addLabelValue('Ngày phân tích', testResult.analysisDate);
+      pdfGen.addLabelValue('Số điện thoại', testResult.phone);
+      pdfGen.addLabelValue('Số điện thoại bác sĩ', additionalPatientData.doctorPhone || doctorPhone);
+      pdfGen.addLabelValue('Kết quả', testResult.result === 'positive' ? 'Dương tính' : 'Âm tính');
+      
+      pdfGen.addSpace();
+      
+      // Section B - Biomarkers (all 77)
+      pdfGen.addSectionHeader('B. CHI TIẾT 77 CHỈ SỐ SINH HỌC:');
+      const biomarkersArray = BIOMARKER_LIST.map(biomarker => {
         const key = biomarker.code.toLowerCase();
         const marker = fullBiomarkers[key];
-        return `- ${biomarker.name}: ${marker.value} (Khoảng bình thường: ${marker.normal})
-          Nhận định: ${marker.status === 'high' ? 'Tăng' : marker.status === 'low' ? 'Giảm' : 'Trong ngưỡng'}`;
-      }).join('\n      ')}
+        return {
+          name: biomarker.name,
+          value: marker.value,
+          unit: '',
+          normalRange: marker.normal,
+          status: marker.status === 'high' ? 'Tăng' : marker.status === 'low' ? 'Giảm' : 'Trong ngưỡng'
+        };
+      });
+      pdfGen.formatBiomarkers(biomarkersArray);
       
-      C. KẾT QUẢ PHÂN TÍCH:
+      pdfGen.addSpace();
       
-      DANH SÁCH CÁC CHỈ SỐ TĂNG:
-      ${highBiomarkers.length > 0 ? highBiomarkers.map(biomarker => {
-        const key = biomarker.code.toLowerCase();
-        const marker = fullBiomarkers[key];
-        return `- ${biomarker.name}: ${marker.value} (BT: ${marker.normal})`;
-      }).join('\n      ') : '      Không có chỉ số nào tăng cao'}
+    //   // Section C - Analysis Results
+    //   pdfGen.addSectionHeader('C. KẾT QUẢ PHÂN TÍCH:');
       
-      DANH SÁCH CÁC CHỈ SỐ GIẢM:
-      ${lowBiomarkers.length > 0 ? lowBiomarkers.map(biomarker => {
-        const key = biomarker.code.toLowerCase();
-        const marker = fullBiomarkers[key];
-        return `- ${biomarker.name}: ${marker.value} (BT: ${marker.normal})`;
-      }).join('\n      ') : '      Không có chỉ số nào giảm thấp'}
+    //   pdfGen.addText('DANH SÁCH CÁC CHỈ SỐ TĂNG:');
+    // if (highBiomarkers.length > 0) {
+    //   highBiomarkers.slice(0, 5).forEach(biomarker => {
+    //     const key = biomarker.code.toLowerCase();
+    //     const marker = fullBiomarkers[key];
+    //       pdfGen.addText(`- ${biomarker.name}: ${marker.value} (BT: ${marker.normal})`);
+    //   });
+    // } else {
+    //     pdfGen.addText('Không có chỉ số nào tăng cao');
+    // }
+    
+    //   pdfGen.addSpace();
+    
+    //   pdfGen.addText('DANH SÁCH CÁC CHỈ SỐ GIẢM:');
+    // if (lowBiomarkers.length > 0) {
+    //   lowBiomarkers.slice(0, 5).forEach(biomarker => {
+    //     const key = biomarker.code.toLowerCase();
+    //     const marker = fullBiomarkers[key];
+    //       pdfGen.addText(`- ${biomarker.name}: ${marker.value} (BT: ${marker.normal})`);
+    //   });
+    // } else {
+    //     pdfGen.addText('Không có chỉ số nào giảm thấp');
+    // }
+    
+    //   pdfGen.addSpace();
+    
+    // Section D - Diagnosis
+      pdfGen.addSectionHeader('C. KẾT QUẢ CHẨN ĐOÁN:');
+      pdfGen.addLabelValue('Kết quả xét nghiệm', testResult.result === 'positive' ? 'Dương tính' : 'Âm tính');
+      pdfGen.addLabelValue('Chẩn đoán', testResult.diagnosis);
+    if (testResult.diseaseCode) {
+        pdfGen.addLabelValue('Mã bệnh', testResult.diseaseCode);
+    }
       
-      D. KẾT QUẢ CHẨN ĐOÁN:
-      - Kết quả xét nghiệm: ${testResult.result === 'positive' ? 'Dương tính' : 'Âm tính'}
-      - Chẩn đoán: ${testResult.diagnosis}
-      ${testResult.diseaseCode ? `- Mã bệnh: ${testResult.diseaseCode}` : ''}
+      pdfGen.addSpace();
+    
+    // Section E - Doctor Conclusion
+      pdfGen.addSectionHeader('D. KẾT LUẬN CỦA BÁC SĨ:');
+      pdfGen.addText(testResult.doctorConclusion || 'Chưa có kết luận từ bác sĩ');
       
-      E. KẾT LUẬN CỦA BÁC SĨ:
-      ${testResult.doctorConclusion || 'Chưa có kết luận từ bác sĩ'}
-      
-      ============================
-      Báo cáo được tạo bởi: SLSS Gentis
-      Ngày tạo: ${new Date().toLocaleString('vi-VN')}
-      Bác sĩ: ${userRole === 'collaborator' ? 'Gentis' : 'Bác sĩ'}
-    `;
-
-    const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `BaoCao_ChiTiet_${testResult.testCode}.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+      // Generate and download PDF
+      await pdfGen.downloadPdf(`BaoCao_ChiTiet_${testResult.testCode}.pdf`);
     
     toast({
       title: "Tải xuống thành công",
-      description: `Báo cáo chi tiết ${testResult.testCode} đã được tải xuống`,
+      description: `Báo cáo chi tiết ${testResult.testCode} đã được tải xuống PDF`,
     });
+      
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Lỗi tạo PDF",
+        description: "Không thể tạo file PDF. Vui lòng thử lại.",
+        variant: "destructive"
+      });
+    }
   };
 
   const disease = testResult.diseaseCode ? diseaseInfo[testResult.diseaseCode as keyof typeof diseaseInfo] : null;
